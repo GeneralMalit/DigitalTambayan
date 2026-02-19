@@ -1,13 +1,21 @@
 'use client'
 
 import { authService } from '@/lib/authService'
-import { Profile } from '@/types/database'
+import { chatService } from '@/lib/chatService'
+import { Profile, Room } from '@/types/database'
 import { useEffect, useState } from 'react'
+import { useChat } from '@/hooks/useChat'
+import ChatBox from './chat/ChatBox'
+import ChatInput from './chat/ChatInput'
 
 export default function Dashboard() {
     const [profile, setProfile] = useState<Profile | null>(null)
+    const [lobby, setLobby] = useState<Room | null>(null)
     const [loading, setLoading] = useState(true)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+    // Chat state
+    const { messages, sendMessage, clearHistory, loading: chatLoading } = useChat(lobby?.id)
 
     // Password change state
     const [oldPassword, setOldPassword] = useState('')
@@ -18,17 +26,22 @@ export default function Dashboard() {
     const [passSuccess, setPassSuccess] = useState<string | null>(null)
 
     useEffect(() => {
-        async function loadProfile() {
+        async function initDashboard() {
             try {
-                const data = await authService.getCurrentProfile()
-                setProfile(data as Profile)
-            } catch (err) {
-                console.error('Failed to load profile:', err)
+                const [profileData, lobbyData] = await Promise.all([
+                    authService.getCurrentProfile(),
+                    chatService.getLobbyRoom()
+                ])
+                setProfile(profileData as Profile)
+                setLobby(lobbyData)
+            } catch (err: any) {
+                console.error('Failed to initialize dashboard:', err)
+                setPassError(err.message || 'Initialization error')
             } finally {
                 setLoading(false)
             }
         }
-        loadProfile()
+        initDashboard()
     }, [])
 
     const handleSignOut = async () => {
@@ -65,26 +78,57 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="relative w-full max-w-md">
-            <div className="space-y-8 rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl shadow-2xl text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-white">
-                    Welcome to the Tambayan!
-                </h2>
-                <p className="mt-2 text-zinc-400">
-                    You are successfully signed in as: <br />
-                    <span className="text-blue-400 font-mono font-bold">
-                        {profile?.username || 'Authenticated User'}
-                    </span>
-                </p>
-
-                <div className="mt-8">
-                    <button
-                        onClick={handleSignOut}
-                        className="text-sm font-medium text-zinc-500 hover:text-white transition-colors"
-                    >
-                        Sign Out
-                    </button>
+        <div className="relative w-full max-w-2xl px-4 py-8 flex flex-col items-center">
+            {/* User Profile Summary */}
+            <div className="w-full max-w-md mb-8 flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md">
+                <div className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-tighter text-zinc-500 font-bold">Profile</span>
+                    <span className="text-blue-400 font-bold">{profile?.username}</span>
                 </div>
+                <button
+                    onClick={handleSignOut}
+                    className="text-xs font-medium text-zinc-500 hover:text-white transition-colors"
+                >
+                    Sign Out
+                </button>
+            </div>
+
+            {/* Chat Container */}
+            <div className="w-full bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col p-6 min-h-[600px] relative overflow-hidden">
+                <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+                    <div className="flex items-center space-x-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <h2 className="text-lg font-bold text-white tracking-tight">#{lobby?.name || 'Lobby'}</h2>
+                    </div>
+
+                    {/* Admin Actions */}
+                    {profile?.is_admin && (
+                        <button
+                            onClick={() => {
+                                if (confirm('Clear all messages in this room?')) clearHistory()
+                            }}
+                            className="text-[10px] uppercase font-bold tracking-widest text-red-500/50 hover:text-red-500 transition-colors border border-red-500/20 px-2 py-1 rounded"
+                        >
+                            Clear History
+                        </button>
+                    )}
+                </div>
+
+                {chatLoading ? (
+                    <div className="flex-1 flex items-center justify-center text-zinc-500 animate-pulse">
+                        Warming up the tambayan...
+                    </div>
+                ) : (
+                    <ChatBox
+                        messages={messages}
+                        currentUserId={profile?.id}
+                    />
+                )}
+
+                <ChatInput
+                    onSend={(content) => sendMessage(profile?.id || null, profile?.username || 'Guest', content)}
+                    disabled={chatLoading}
+                />
             </div>
 
             {/* Settings Cog Wheel */}
@@ -94,7 +138,6 @@ export default function Dashboard() {
                 aria-label="Settings"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 animate-spin-slow">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0 1 15 0m-15 0a7.5 7.5 0 1 1 15 0m-15 0H3m16.5 0H21m-1.5 0H12m-8.457 3.077 1.41-1.41m14.095-14.095-1.41 1.41M5.106 6.336l-1.41-1.41m14.095 14.095 1.41-1.41M12 3.75V3m0 18v-.75M3.75 12H3m18 0h-.75m-1.41-3.077L20.25 7.5m-16.5 0 1.41 1.432m14.095 1.41L20.25 12" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065Z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                 </svg>

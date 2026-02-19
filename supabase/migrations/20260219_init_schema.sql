@@ -32,8 +32,8 @@ alter table public.rooms enable row level security;
 create policy "Rooms are viewable by everyone." on public.rooms
   for select using (true);
 
--- Insert general-lobby
-insert into public.rooms (slug, name) values ('general-lobby', 'General Lobby');
+-- Insert Lobby
+insert into public.rooms (slug, name) values ('general', 'Lobby');
 
 -- Create messages table
 create table public.messages (
