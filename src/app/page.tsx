@@ -1,13 +1,38 @@
+'use client'
+
 import AuthForm from "@/components/auth/AuthForm";
+import Dashboard from "@/components/Dashboard";
+import { authService } from "@/lib/authService";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const session = await authService.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+    checkUser();
+  }, []);
+
+  if (loading) return null;
+
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="w-full max-w-md p-4">
-        <h1 className="text-3xl font-bold text-white text-center mb-8">
-          Digital Tambyan
-        </h1>
-        <AuthForm />
+    <main className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
+      <div className="w-full flex justify-center">
+        {user ? (
+          <Dashboard />
+        ) : (
+          <div className="w-full max-w-md">
+            <h1 className="text-4xl font-black text-white text-center mb-12 tracking-tighter">
+              DIGITAL TAMBAYAN
+            </h1>
+            <AuthForm />
+          </div>
+        )}
       </div>
     </main>
   );
