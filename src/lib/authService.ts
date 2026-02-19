@@ -23,9 +23,25 @@ export const authService = {
     },
 
     /**
-     * Signs in an existing user with email and password.
+     * Signs in an existing user with email/username and password.
      */
-    async signIn(email: string, password: string) {
+    async signIn(identifier: string, password: string) {
+        let email = identifier
+
+        // Basic check: if identifier doesn't contain '@', treat it as a username
+        if (!identifier.includes('@')) {
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('username', identifier)
+                .single()
+
+            if (profileError || !profile) {
+                throw new Error('Username not found')
+            }
+            email = profile.email
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -67,5 +83,31 @@ export const authService = {
 
         if (error) throw error
         return data
+    },
+
+    /**
+     * Updates the user's password.
+     * It first verifies the old password by re-authenticating.
+     */
+    async updatePassword(oldPassword: string, newPassword: string) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user || !user.email) throw new Error('Not authenticated')
+
+        // 1. Verify old password by signing in
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: oldPassword,
+        })
+
+        if (signInError) {
+            throw new Error('Incorrect old password')
+        }
+
+        // 2. Update to new password
+        const { error: updateError } = await supabase.auth.updateUser({
+            password: newPassword
+        })
+
+        if (updateError) throw updateError
     }
 }

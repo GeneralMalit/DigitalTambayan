@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 
 export default function AuthForm() {
     const [isLogin, setIsLogin] = useState(true)
-    const [email, setEmail] = useState('')
+    const [identifier, setIdentifier] = useState('')
     const [password, setPassword] = useState('')
     const [username, setUsername] = useState('')
     const [loading, setLoading] = useState(false)
@@ -20,12 +20,11 @@ export default function AuthForm() {
 
         try {
             if (isLogin) {
-                await authService.signIn(email, password)
+                await authService.signIn(identifier, password)
             } else {
-                await authService.signUp(email, password, username)
+                await authService.signUp(identifier, password, username)
                 alert('Check your email for the confirmation link!')
             }
-            router.refresh()
         } catch (err: any) {
             setError(err.message || 'An authentication error occurred')
         } finally {
@@ -69,17 +68,19 @@ export default function AuthForm() {
                             </div>
                         )}
                         <div>
-                            <label htmlFor="email-address" className="sr-only">Email address</label>
+                            <label htmlFor="identifier" className="sr-only">
+                                {isLogin ? 'Email or Username' : 'Email address'}
+                            </label>
                             <input
-                                id="email-address"
-                                name="email"
-                                type="email"
-                                autoComplete="email"
+                                id="identifier"
+                                name="identifier"
+                                type={isLogin ? "text" : "email"}
+                                autoComplete={isLogin ? "username" : "email"}
                                 required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
                                 className="relative block w-full rounded-lg border-0 bg-white/5 py-3 text-white ring-1 ring-inset ring-white/10 placeholder:text-zinc-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6"
-                                placeholder="Email address"
+                                placeholder={isLogin ? "Email or Username" : "Email address"}
                             />
                         </div>
                         <div>

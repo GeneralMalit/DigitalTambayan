@@ -2,6 +2,7 @@
 create table public.profiles (
   id uuid references auth.users not null primary key,
   username text unique not null,
+  email text unique not null,
   is_admin boolean default false not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -50,15 +51,18 @@ alter table public.messages enable row level security;
 create policy "Messages are viewable by everyone." on public.messages
   for select using (true);
 
-create policy "Authenticated users can insert messages." on public.messages
-  for insert with check (auth.role() = 'authenticated');
+create policy "Users can insert their own messages." on public.messages
+  for insert with check (
+    auth.role() = 'authenticated' AND 
+    (auth.uid() = user_id OR is_bot = true)
+  );
 
 -- Function to handle new user signup and sync username from metadata
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, username)
-  values (new.id, new.raw_user_meta_data->>'username');
+  insert into public.profiles (id, username, email)
+  values (new.id, new.raw_user_meta_data->>'username', new.email);
   return new;
 end;
 $$ language plpgsql security definer;
