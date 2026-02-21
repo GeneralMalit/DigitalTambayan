@@ -34,7 +34,7 @@ export default function ChatBox({ messages, currentUserId, roomId }: ChatBoxProp
     return (
         <div
             ref={scrollRef}
-            className="h-full w-full overflow-y-auto space-y-4 pr-2 pb-16 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+            className="h-full w-full overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
         >
             {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-2 opacity-50">
