@@ -3,16 +3,22 @@ import { useState, useRef, useEffect } from 'react'
 interface ChatInputProps {
     onSend: (content: string) => Promise<void>
     disabled?: boolean
+    onTypingStart?: () => void
+    onTypingStop?: () => void
 }
 
-export default function ChatInput({ onSend, disabled }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled, onTypingStart, onTypingStop }: ChatInputProps) {
     const [content, setContent] = useState('')
     const [isSending, setIsSending] = useState(false)
     const inputRef = useRef<HTMLTextAreaElement>(null)
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const handleSubmit = async (e?: React.FormEvent) => {
         e?.preventDefault()
         if (!content.trim() || isSending || disabled) return
+
+        // Stop typing indicator when sending
+        onTypingStop?.()
 
         setIsSending(true)
         try {
@@ -34,6 +40,32 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         }
     }
 
+    // Handle typing indicator
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setContent(e.target.value)
+
+        // Start typing indicator
+        if (e.target.value.trim()) {
+            onTypingStart?.()
+
+            // Clear existing timeout
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+
+            // Stop typing after 3 seconds of inactivity
+            typingTimeoutRef.current = setTimeout(() => {
+                onTypingStop?.()
+            }, 3000)
+        } else {
+            // Stop typing if input is empty
+            onTypingStop?.()
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+        }
+    }
+
     // Auto-resize textarea
     useEffect(() => {
         const textarea = inputRef.current
@@ -43,13 +75,22 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         }
     }, [content])
 
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+        }
+    }, [])
+
     return (
-        <form onSubmit={handleSubmit} className="relative mt-auto">
+        <form onSubmit={handleSubmit} className="relative mt-auto z-10">
             <textarea
                 ref={inputRef}
                 rows={1}
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Aa"
                 disabled={disabled || isSending}

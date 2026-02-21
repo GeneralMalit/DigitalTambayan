@@ -13,12 +13,13 @@ export type Room = {
 };
 
 export type Message = {
-    id: number;
+    id: number | string;
     room_id: string;
     user_id: string | null;
     sender_name: string;
     content: string;
     is_bot: boolean;
+    is_system: boolean;
     created_at: string;
 };
 

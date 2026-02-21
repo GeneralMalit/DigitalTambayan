@@ -5,8 +5,10 @@ import { chatService } from '@/lib/chatService'
 import { Profile, Room } from '@/types/database'
 import { useEffect, useState } from 'react'
 import { useChat } from '@/hooks/useChat'
+import { useTypingIndicator } from '@/hooks/useTypingIndicator'
 import ChatBox from './chat/ChatBox'
 import ChatInput from './chat/ChatInput'
+import TypingIndicator from './chat/TypingIndicator'
 
 export default function Dashboard() {
     const [profile, setProfile] = useState<Profile | null>(null)
@@ -16,6 +18,13 @@ export default function Dashboard() {
 
     // Chat state
     const { messages, sendMessage, clearHistory, loading: chatLoading } = useChat(lobby?.id)
+
+    // Typing indicator state
+    const { startTyping, stopTyping, getTypingDisplayText } = useTypingIndicator(
+        lobby?.id,
+        profile?.id,
+        profile?.username || 'Guest'
+    )
 
     // Password change state
     const [oldPassword, setOldPassword] = useState('')
@@ -94,8 +103,9 @@ export default function Dashboard() {
             </div>
 
             {/* Chat Container */}
-            <div className="w-full bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col p-6 min-h-[600px] relative overflow-hidden">
-                <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+            <div className="w-full bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col p-6 h-[600px] relative overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4 shrink-0">
                     <div className="flex items-center space-x-3">
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                         <h2 className="text-lg font-bold text-white tracking-tight">#{lobby?.name || 'Lobby'}</h2>
@@ -114,21 +124,36 @@ export default function Dashboard() {
                     )}
                 </div>
 
-                {chatLoading ? (
-                    <div className="flex-1 flex items-center justify-center text-zinc-500 animate-pulse">
-                        Warming up the tambayan...
+                {/* Flex wrapper: message area + input bar */}
+                <div className="flex-1 flex flex-col min-h-0">
+                    {/* Message list - scrollable, fills remaining space */}
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                        {chatLoading ? (
+                            <div className="flex items-center justify-center text-zinc-500 animate-pulse">
+                                Warming up the tambayan...
+                            </div>
+                        ) : (
+                            <ChatBox
+                                messages={messages}
+                                currentUserId={profile?.id}
+                                roomId={lobby?.id}
+                            />
+                        )}
                     </div>
-                ) : (
-                    <ChatBox
-                        messages={messages}
-                        currentUserId={profile?.id}
-                    />
-                )}
 
-                <ChatInput
-                    onSend={(content) => sendMessage(profile?.id || null, profile?.username || 'Guest', content)}
-                    disabled={chatLoading}
-                />
+                    {/* Input bar - fixed at bottom with z-index */}
+                    <div className="shrink-0 relative z-10 pt-2">
+                        <ChatInput
+                            onSend={(content) => sendMessage(profile?.id || null, profile?.username || 'Guest', content)}
+                            disabled={chatLoading}
+                            onTypingStart={startTyping}
+                            onTypingStop={stopTyping}
+                        />
+
+                        {/* Typing Indicator */}
+                        <TypingIndicator text={getTypingDisplayText()} />
+                    </div>
+                </div>
             </div>
 
             {/* Settings Cog Wheel */}

@@ -1,13 +1,15 @@
 import { Message } from '@/types/database'
 import MessageItem from './MessageItem'
 import { useEffect, useRef } from 'react'
+import { chatService } from '@/lib/chatService'
 
 interface ChatBoxProps {
     messages: Message[]
     currentUserId: string | undefined
+    roomId: string | undefined
 }
 
-export default function ChatBox({ messages, currentUserId }: ChatBoxProps) {
+export default function ChatBox({ messages, currentUserId, roomId }: ChatBoxProps) {
     const scrollRef = useRef<HTMLDivElement>(null)
 
     // Auto-scroll to bottom
@@ -17,10 +19,22 @@ export default function ChatBox({ messages, currentUserId }: ChatBoxProps) {
         }
     }, [messages])
 
+    const handleSendTestSystemMessage = async () => {
+        if (!roomId) {
+            console.error('Room ID is undefined')
+            return
+        }
+
+        const testMessage = await chatService.sendTestSystemMessage(roomId)
+        if (!testMessage) {
+            console.error('Failed to send test system message')
+        }
+    }
+
     return (
         <div
             ref={scrollRef}
-            className="flex-1 w-full overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent h-[400px] mb-4"
+            className="h-full w-full overflow-y-auto space-y-4 pr-2 pb-16 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
         >
             {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-2 opacity-50">

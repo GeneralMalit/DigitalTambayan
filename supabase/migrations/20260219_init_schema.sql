@@ -54,7 +54,11 @@ create policy "Messages are viewable by everyone." on public.messages
 create policy "Users can insert their own messages." on public.messages
   for insert with check (
     auth.role() = 'authenticated' AND 
-    (auth.uid() = user_id OR is_bot = true)
+    (
+      (auth.uid() = user_id) OR 
+      is_bot = true OR 
+      is_system = true
+    )
   );
 
 -- Function to handle new user signup and sync username from metadata

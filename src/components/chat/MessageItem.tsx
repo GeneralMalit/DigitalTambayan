@@ -7,6 +7,19 @@ interface MessageItemProps {
 
 export default function MessageItem({ message, isOwn }: MessageItemProps) {
     const isBot = message.is_bot
+    const isSystem = message.is_system || (message.sender_name === 'Berto')
+
+    if (isSystem) {
+        return (
+            <div className="flex justify-center w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="text-center px-4 py-2 max-w-[80%]">
+                    <span className="text-xs text-zinc-500 italic">
+                        {message.content}
+                    </span>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>

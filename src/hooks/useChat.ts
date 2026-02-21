@@ -32,9 +32,27 @@ export function useChat(roomId: string | undefined) {
                 subscriptionRef.current = chatService.subscribeToMessages(roomId, (newMessage) => {
                     if (mounted) {
                         setMessages((prev) => {
-                            // Avoid duplicates just in case
-                            if (prev.some((m) => m.id === newMessage.id)) return prev
-                            return [...prev, newMessage]
+                            // Check if message already exists (either as temp or real)
+                            const exists = prev.some(msg => {
+                                // Check if temp message with same content and sender exists
+                                if (typeof msg.id === 'string' && msg.id.startsWith('temp-')) {
+                                    return msg.content === newMessage.content &&
+                                        msg.sender_name === newMessage.sender_name &&
+                                        Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 5000
+                                }
+                                // Check if real message with same id exists
+                                return msg.id === newMessage.id
+                            })
+
+                            if (exists) return prev
+
+                            // Add is_system property to Berto's messages
+                            const messageToAdd = {
+                                ...newMessage,
+                                is_system: newMessage.sender_name === 'Berto'
+                            }
+
+                            return [...prev, messageToAdd]
                         })
                     }
                 })
@@ -58,9 +76,33 @@ export function useChat(roomId: string | undefined) {
 
     const sendMessage = async (userId: string | null, senderName: string, content: string) => {
         if (!roomId) return
+
+        // Create a temporary message to show immediately
+        const tempMessage: Message = {
+            id: `temp-${Date.now()}`,
+            room_id: roomId,
+            user_id: userId,
+            sender_name: senderName,
+            content: content,
+            is_bot: false,
+            is_system: false,
+            created_at: new Date().toISOString()
+        }
+
+        // Immediately add to UI for instant feedback
+        setMessages(prev => [...prev, tempMessage])
+
         try {
-            await chatService.sendMessage(roomId, userId, senderName, content)
+            // Send message to server
+            const actualMessage = await chatService.sendMessage(roomId, userId, senderName, content)
+
+            // Replace temporary message with actual message from server
+            setMessages(prev => prev.map(msg =>
+                msg.id === tempMessage.id ? actualMessage : msg
+            ))
         } catch (err: any) {
+            // Remove temporary message if there's an error
+            setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id))
             setError(err.message || 'Failed to send message')
             throw err
         }
