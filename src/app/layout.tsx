@@ -27,7 +27,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="min-h-screen flex flex-col">
+          <main className="flex-1">
+            {children}
+          </main>
+          <footer className="py-4 text-center text-xs text-zinc-600 border-t border-white/5">
+            © 2026 Digital Tambayan by General Malit - development (alpha 0.1.0)
+          </footer>
+        </div>
       </body>
     </html>
   );
