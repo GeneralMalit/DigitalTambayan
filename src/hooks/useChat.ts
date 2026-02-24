@@ -29,33 +29,43 @@ export function useChat(roomId: string | undefined) {
                     subscriptionRef.current.unsubscribe()
                 }
 
-                subscriptionRef.current = chatService.subscribeToMessages(roomId, (newMessage) => {
-                    if (mounted) {
-                        setMessages((prev) => {
-                            // Check if message already exists (either as temp or real)
-                            const exists = prev.some(msg => {
-                                // Check if temp message with same content and sender exists
-                                if (typeof msg.id === 'string' && msg.id.startsWith('temp-')) {
-                                    return msg.content === newMessage.content &&
-                                        msg.sender_name === newMessage.sender_name &&
-                                        Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 5000
+                subscriptionRef.current = chatService.subscribeToMessages(
+                    roomId,
+                    // INSERT callback
+                    (newMessage) => {
+                        if (mounted) {
+                            setMessages((prev) => {
+                                // Check if message already exists (either as temp or real)
+                                const exists = prev.some(msg => {
+                                    // Check if temp message with same content and sender exists
+                                    if (typeof msg.id === 'string' && msg.id.startsWith('temp-')) {
+                                        return msg.content === newMessage.content &&
+                                            msg.sender_name === newMessage.sender_name &&
+                                            Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 5000
+                                    }
+                                    // Check if real message with same id exists
+                                    return msg.id === newMessage.id
+                                })
+
+                                if (exists) return prev
+
+                                // Add is_system property to Berto's messages
+                                const messageToAdd = {
+                                    ...newMessage,
+                                    is_system: newMessage.sender_name === 'Berto'
                                 }
-                                // Check if real message with same id exists
-                                return msg.id === newMessage.id
+
+                                return [...prev, messageToAdd]
                             })
-
-                            if (exists) return prev
-
-                            // Add is_system property to Berto's messages
-                            const messageToAdd = {
-                                ...newMessage,
-                                is_system: newMessage.sender_name === 'Berto'
-                            }
-
-                            return [...prev, messageToAdd]
-                        })
+                        }
+                    },
+                    // DELETE callback
+                    (deletedId) => {
+                        if (mounted) {
+                            setMessages((prev) => prev.filter(msg => msg.id !== deletedId))
+                        }
                     }
-                })
+                )
             } catch (err: any) {
                 if (mounted) {
                     setError(err.message || 'Failed to initialize chat')
@@ -119,11 +129,23 @@ export function useChat(roomId: string | undefined) {
         }
     }
 
+    // Refresh messages from server
+    const refreshMessages = async () => {
+        if (!roomId) return
+        try {
+            const history = await chatService.getMessages(roomId)
+            setMessages(history)
+        } catch (err: any) {
+            console.error('Failed to refresh messages:', err)
+        }
+    }
+
     return {
         messages,
         loading,
         error,
         sendMessage,
-        clearHistory
+        clearHistory,
+        refreshMessages
     }
 }
