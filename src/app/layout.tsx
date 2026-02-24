@@ -33,7 +33,7 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="fixed bottom-0 left-0 right-0 py-3 text-center text-xs text-zinc-500 bg-zinc-950/80 backdrop-blur-sm border-t border-white/5">
-            © 2026 Digital Tambayan by General Malit - development (alpha 0.1.0)
+            © 2026 Digital Tambayan by General Malit - development (alpha 0.9.0)
           </footer>
         </div>
       </body>
