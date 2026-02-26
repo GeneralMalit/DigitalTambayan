@@ -171,10 +171,10 @@ export const chatService = {
 
         if (error) throw error
 
-        // Add is_system property to Berto's messages
+        // Use actual is_system value from database
         return data.map(msg => ({
             ...msg,
-            is_system: msg.sender_name === 'Berto'
+            is_system: msg.is_system ?? false
         })) as Message[]
     },
 

@@ -49,10 +49,10 @@ export function useChat(roomId: string | undefined) {
 
                                 if (exists) return prev
 
-                                // Add is_system property to Berto's messages
+                                // Use actual is_system value from database
                                 const messageToAdd = {
                                     ...newMessage,
-                                    is_system: newMessage.sender_name === 'Berto'
+                                    is_system: newMessage.is_system ?? false
                                 }
 
                                 return [...prev, messageToAdd]

@@ -18,7 +18,7 @@ export default function MessageItem({ message, isOwn, canDelete, deletionThresho
     const [deleteError, setDeleteError] = useState<string | null>(null)
 
     const isBot = message.is_bot
-    const isSystem = message.is_system || (message.sender_name === 'Berto')
+    const isSystem = message.is_system
 
     // Check if message can be deleted based on time threshold
     const canDeleteThisMessage = canDelete && isOwn && !isSystem && !isBot
