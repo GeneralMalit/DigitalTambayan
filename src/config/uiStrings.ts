@@ -23,6 +23,8 @@ export const UI_STRINGS = {
         noMessagesPreview: "No messages yet",
         loadingRooms: "Loading rooms...",
         unnamedGroup: "Unnamed Group",
+        users: "Users",
+        startConversation: "Start a conversation",
     },
     admin: {
         dashboardTitle: "Admin Dashboard",

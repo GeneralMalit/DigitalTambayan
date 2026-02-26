@@ -96,12 +96,12 @@ export default function ChatInput({ onSend, disabled, onTypingStart, onTypingSto
                 onKeyDown={handleKeyDown}
                 placeholder="Aa"
                 disabled={disabled || isSending}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-4 pr-12 text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all disabled:opacity-50 min-h-[48px] scrollbar-hidden hover:chat-input-scrollbar focus:chat-input-scrollbar"
+                className="w-full bg-white/[0.03] border-none rounded-md py-4 pl-6 pr-14 text-sm text-white placeholder:text-zinc-600 focus:bg-white/[0.06] focus:ring-1 focus:ring-zinc-800 outline-none resize-none transition-all disabled:opacity-50 min-h-[56px] scrollbar-hidden hover:chat-input-scrollbar focus:chat-input-scrollbar"
             />
             <button
                 type="submit"
                 disabled={!content.trim() || isSending || disabled}
-                className="absolute right-2 bottom-1.5 p-2 text-blue-500 hover:text-blue-400 disabled:text-zinc-600 transition-colors"
+                className="absolute right-4 bottom-3 p-2 text-zinc-600 hover:text-white disabled:opacity-20 transition-all duration-300"
                 aria-label="Send message"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">

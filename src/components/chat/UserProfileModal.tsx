@@ -37,8 +37,8 @@ export default function UserProfileModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all duration-300">
+            <div className="w-full max-w-sm rounded-md bg-[#0a0a0a]/90 shadow-2xl overflow-hidden ring-1 ring-white/5">
                 {/* Close Button */}
                 <div className="flex justify-end p-4">
                     <button
@@ -59,7 +59,7 @@ export default function UserProfileModal({
                     </div>
 
                     {/* Username */}
-                    <h3 className="text-xl font-semibold text-white mb-1">{user.username}</h3>
+                    <h3 className="text-2xl font-medium text-white mb-2 font-heading">{user.username}</h3>
 
                     {/* Status Badge */}
                     {user.is_admin && (
@@ -78,12 +78,12 @@ export default function UserProfileModal({
                     <button
                         onClick={handleStartChat}
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-all duration-300 disabled:opacity-50"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
                         </svg>
-                        {loading ? 'Starting...' : 'Send Message'}
+                        {loading ? 'Starting...' : 'Send message'}
                     </button>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import { Message } from '@/types/database'
 import MessageItem from './MessageItem'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useLayoutEffect } from 'react'
 import { chatService } from '@/lib/chatService'
 import { UI_STRINGS } from '@/config/uiStrings'
 
@@ -16,11 +16,23 @@ interface ChatBoxProps {
 export default function ChatBox({ messages, currentUserId, roomId, enableMessageDeletion, deletionThresholdMinutes, onMessageDeleted }: ChatBoxProps) {
     const scrollRef = useRef<HTMLDivElement>(null)
 
-    // Auto-scroll to bottom
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    // Auto-scroll to bottom - use useLayoutEffect for synchronous execution
+    useLayoutEffect(() => {
+        // Use requestAnimationFrame to ensure DOM has been painted
+        const scrollToBottom = () => {
+            if (scrollRef.current) {
+                scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+            }
         }
+
+        // First attempt - synchronous after layout
+        scrollToBottom()
+
+        // Second attempt - after next paint (handles most cases)
+        requestAnimationFrame(scrollToBottom)
+
+        // Third attempt - after CSS animations complete (handles system messages with slide-in)
+        setTimeout(scrollToBottom, 350)
     }, [messages])
 
     const handleSendTestSystemMessage = async () => {

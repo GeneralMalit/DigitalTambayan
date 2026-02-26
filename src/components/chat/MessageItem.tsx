@@ -110,7 +110,7 @@ export default function MessageItem({ message, isOwn, canDelete, deletionThresho
             )}
 
             <div className={`flex items-baseline space-x-2 mb-1 px-1`}>
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${isBot ? 'text-blue-400' : 'text-zinc-500'}`}>
+                <span className={`text-[10px] font-medium tracking-wider font-heading ${isBot ? 'text-blue-400' : 'text-zinc-500'}`}>
                     {message.sender_name} {isBot && '🤖'}
                 </span>
                 <span className="text-[10px] text-zinc-600 font-mono">
@@ -119,12 +119,12 @@ export default function MessageItem({ message, isOwn, canDelete, deletionThresho
             </div>
 
             <div className={`
-                max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-lg backdrop-blur-md relative
+                max-w-[85%] rounded-md px-4 py-3 text-sm relative transition-all duration-300
                 ${isBot
-                    ? 'bg-blue-600/10 border border-blue-500/20 text-blue-100 italic'
+                    ? 'bg-blue-500/[0.05] text-blue-200'
                     : isOwn
-                        ? 'bg-blue-600 border border-blue-500 text-white rounded-tr-none'
-                        : 'bg-white/5 border border-white/10 text-zinc-200 rounded-tl-none'}
+                        ? 'bg-white text-black font-medium'
+                        : 'bg-white/[0.03] text-zinc-300'}
             `}>
                 {message.content}
             </div>

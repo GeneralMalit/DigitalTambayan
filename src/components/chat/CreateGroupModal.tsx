@@ -76,11 +76,11 @@ export default function CreateGroupModal({
     )
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all duration-300">
+            <div className="w-full max-w-md rounded-md bg-[#0a0a0a]/90 shadow-2xl overflow-hidden ring-1 ring-white/5">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/10">
-                    <h3 className="text-lg font-semibold text-white">Create Group Chat</h3>
+                <div className="flex items-center justify-between p-8">
+                    <h3 className="text-xl font-medium text-white font-heading">Create group chat</h3>
                     <button
                         onClick={onClose}
                         className="p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -100,47 +100,49 @@ export default function CreateGroupModal({
                     )}
 
                     {/* Group Name Input */}
-                    <div>
-                        <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
-                            Group Name (optional)
+                    <div className="px-8 space-y-2">
+                        <label className="block text-[10px] font-medium text-zinc-600 uppercase tracking-widest">
+                            Group name (optional)
                         </label>
                         <input
                             type="text"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
                             placeholder="Enter group name..."
-                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 px-4 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full bg-white/[0.03] border-none rounded-md py-2.5 px-4 text-xs text-white placeholder-zinc-700 focus:bg-white/[0.06] focus:ring-1 focus:ring-zinc-800 outline-none transition-all"
                         />
                     </div>
 
                     {/* Member Selection */}
-                    <div>
-                        <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
-                            Select Members
-                        </label>
+                    <div className="px-8 pb-8 space-y-6">
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-medium text-zinc-600 uppercase tracking-widest">
+                                Select members
+                            </label>
 
-                        {/* Search */}
-                        <div className="relative mb-3">
-                            <input
-                                type="text"
-                                placeholder="Search users..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 pl-9 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
+                            {/* Search */}
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search users..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-white/[0.03] border-none rounded-md py-2.5 px-4 pl-10 text-xs text-white placeholder-zinc-700 focus:bg-white/[0.06] focus:ring-1 focus:ring-zinc-800 outline-none transition-all"
+                                />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4 text-zinc-700 absolute left-3 top-1/2 -translate-y-1/2"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
                         </div>
 
                         {/* User List */}
-                        <div className="max-h-48 overflow-y-auto border border-white/10 rounded-lg">
+                        <div className="max-h-48 overflow-y-auto bg-white/[0.01] rounded-md custom-scrollbar">
                             {filteredUsers.length === 0 ? (
                                 <div className="p-4 text-center text-zinc-500 text-sm">
                                     No users found
@@ -155,8 +157,8 @@ export default function CreateGroupModal({
                                     >
                                         {/* Checkbox */}
                                         <div className={`w-5 h-5 rounded border flex items-center justify-center ${selectedUsers.includes(user.id)
-                                                ? 'bg-blue-600 border-blue-600'
-                                                : 'border-zinc-600'
+                                            ? 'bg-blue-600 border-blue-600'
+                                            : 'border-zinc-600'
                                             }`}>
                                             {selectedUsers.includes(user.id) && (
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
@@ -187,19 +189,19 @@ export default function CreateGroupModal({
                 </div>
 
                 {/* Footer */}
-                <div className="flex gap-3 p-4 border-t border-white/10">
+                <div className="flex gap-3 p-8 pt-4">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white font-medium transition-colors"
+                        className="flex-1 py-3 rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 font-medium text-sm transition-all duration-300"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleCreate}
                         disabled={loading || selectedUsers.length === 0}
-                        className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 py-3 rounded-md bg-white text-black font-semibold text-sm hover:bg-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300"
                     >
-                        {loading ? 'Creating...' : 'Create Group'}
+                        {loading ? 'Creating...' : 'Create group'}
                     </button>
                 </div>
             </div>

@@ -64,6 +64,9 @@ export function useTypingIndicator(
             setTypingUsers(prev => prev.filter(u => now - u.timestamp < TYPING_TIMEOUT))
         }, 1000)
 
+        // Clear typing users when room changes (important for clean state)
+        setTypingUsers([])
+
         return () => {
             channel.unsubscribe()
             clearInterval(cleanupInterval)

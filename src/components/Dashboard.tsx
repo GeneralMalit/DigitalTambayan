@@ -30,6 +30,18 @@ export default function Dashboard() {
     // Room display name
     const [roomDisplayName, setRoomDisplayName] = useState<string>('')
 
+    // Track last read message ID for each room (for unread highlighting)
+    // Using localStorage to persist across page refreshes
+    const [lastReadMessageId, setLastReadMessageId] = useState<Record<string, number>>(() => {
+        if (typeof window === 'undefined') return {}
+        try {
+            const saved = localStorage.getItem('chat_last_read')
+            return saved ? JSON.parse(saved) : {}
+        } catch {
+            return {}
+        }
+    })
+
     // Subscribe to chat settings changes for reactivity
     useEffect(() => {
         const unsubscribe = adminService.subscribeToChatSettings((settings) => {
@@ -43,6 +55,44 @@ export default function Dashboard() {
 
     // Chat state
     const { messages, sendMessage, clearHistory, refreshMessages, loading: chatLoading } = useChat(currentRoom?.id)
+
+    // Mark current room as read when new messages arrive
+    useEffect(() => {
+        if (currentRoom?.id && messages.length > 0) {
+            const lastMsg = messages[messages.length - 1]
+            const msgTime = new Date(lastMsg.created_at).getTime()
+
+            const lastRead = lastReadMessageId[currentRoom.id] || 0
+
+            if (msgTime > lastRead) {
+                const newState = {
+                    ...lastReadMessageId,
+                    [currentRoom.id]: msgTime
+                }
+                setLastReadMessageId(newState)
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('chat_last_read', JSON.stringify(newState))
+                }
+            }
+        }
+    }, [messages, currentRoom?.id])
+
+    // Wrapper to send message and mark as read
+    const handleSendMessage = async (userId: string | null, username: string, content: string) => {
+        await sendMessage(userId, username, content)
+        // Mark room as read when user sends a message
+        if (currentRoom?.id) {
+            const now = Date.now()
+            const newState = {
+                ...lastReadMessageId,
+                [currentRoom.id]: now
+            }
+            setLastReadMessageId(newState)
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('chat_last_read', JSON.stringify(newState))
+            }
+        }
+    }
 
     // Typing indicator state
     const { startTyping, stopTyping, getTypingDisplayText } = useTypingIndicator(
@@ -145,6 +195,26 @@ export default function Dashboard() {
         }
     }, [])
 
+    // Handle room selection - also mark messages as read
+    const handleRoomSelectWithRead = useCallback(async (roomId: string, lastMessageId?: number) => {
+        const room = await chatService.getRoomById(roomId)
+        if (room) {
+            setCurrentRoom(room)
+            // Mark messages as read by storing the last message ID
+            if (lastMessageId) {
+                const newState = {
+                    ...lastReadMessageId,
+                    [roomId]: lastMessageId
+                }
+                setLastReadMessageId(newState)
+                // Persist to localStorage
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('chat_last_read', JSON.stringify(newState))
+                }
+            }
+        }
+    }, [lastReadMessageId])
+
     // Handle room left
     const handleRoomLeft = useCallback(async () => {
         if (!profile) return
@@ -215,11 +285,11 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="w-full h-screen flex flex-col">
+        <div className="w-full h-full flex flex-col">
             {/* Top Bar */}
-            <div className="w-full px-4 py-3 flex items-center justify-between border-b border-white/10 bg-zinc-900/50">
+            <div className="w-full px-8 py-6 flex items-center justify-between bg-black/20 backdrop-blur-md">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-xl font-bold text-white">Digital Tambayan</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight text-white font-heading">Digital <span className="text-zinc-500">Tambayan</span></h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5">
@@ -254,19 +324,21 @@ export default function Dashboard() {
                         currentRoomId={currentRoom?.id || null}
                         onRoomSelect={handleRoomSelect}
                         onUserProfileClick={() => { }}
+                        lastReadMessageId={lastReadMessageId}
+                        onMarkAsRead={handleRoomSelectWithRead}
+                        currentUsername={profile.username}
                     />
                 )}
 
                 {/* Chat Area */}
-                <div className="flex-1 flex flex-col bg-white/5">
+                <div className="flex-1 flex flex-col bg-white/[0.01]">
                     {currentRoom ? (
                         <>
                             {/* Chat Header */}
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-zinc-900/30">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <div className="flex items-center justify-between px-8 py-6">
+                                <div className="flex items-center space-x-4">
                                     <h2
-                                        className="text-lg font-bold text-white tracking-tight cursor-pointer hover:text-blue-400 transition-colors"
+                                        className="text-xl font-medium text-white tracking-tight cursor-pointer hover:text-zinc-400 transition-colors font-heading"
                                         onClick={() => setIsMembersOpen(true)}
                                     >
                                         {currentRoom.is_personal ? (
@@ -294,7 +366,7 @@ export default function Dashboard() {
                             </div>
 
                             {/* Messages */}
-                            <div className="flex-1 overflow-hidden p-6">
+                            <div className="flex-1 overflow-hidden p-6 min-h-0">
                                 {chatLoading ? (
                                     <div className="flex items-center justify-center text-zinc-500 animate-pulse h-full">
                                         Warming up the tambayan...
@@ -314,7 +386,7 @@ export default function Dashboard() {
                             {/* Input */}
                             <div className="px-6 pb-6">
                                 <ChatInput
-                                    onSend={(content) => sendMessage(profile?.id || null, profile?.username || 'Guest', content)}
+                                    onSend={(content) => handleSendMessage(profile?.id || null, profile?.username || 'Guest', content)}
                                     disabled={chatLoading}
                                     onTypingStart={startTyping}
                                     onTypingStop={stopTyping}

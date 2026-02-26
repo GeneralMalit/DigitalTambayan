@@ -12,19 +12,61 @@ interface RoomSidebarProps {
     currentRoomId: string | null
     onRoomSelect: (roomId: string) => void
     onUserProfileClick: (user: Profile) => void
+    lastReadMessageId?: Record<string, number>
+    onMarkAsRead?: (roomId: string, lastMessageId: number) => void
+    currentUsername?: string
 }
 
 export default function RoomSidebar({
     currentUserId,
     currentRoomId,
     onRoomSelect,
-    onUserProfileClick
+    onUserProfileClick,
+    lastReadMessageId = {},
+    onMarkAsRead,
+    currentUsername
 }: RoomSidebarProps) {
     const [rooms, setRooms] = useState<RoomWithMeta[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
     const [displayNames, setDisplayNames] = useState<Record<string, string>>({})
+    const [users, setUsers] = useState<Profile[]>([])
+    const [loadingUsers, setLoadingUsers] = useState(false)
+    const [personalChatUserIds, setPersonalChatUserIds] = useState<Set<string>>(new Set())
+
+    // Check if a room has unread messages
+    // Unread if: has last message AND last message timestamp > last read timestamp
+    const isRoomUnread = (room: RoomWithMeta): boolean => {
+        if (!room.last_message_at) return false
+
+        // Don't show unread for our own messages
+        if (room.last_message_sender === currentUsername) {
+            return false
+        }
+
+        const lastRead = lastReadMessageId[room.id]
+        if (!lastRead) {
+            // Never visited - show as unread if there's any message
+            return true
+        }
+
+        // Compare timestamps
+        const messageTime = new Date(room.last_message_at).getTime()
+        // If message is newer than last read (give 1s buffer for precision)
+        return messageTime > (lastRead + 1000)
+    }
+
+    // Handle room click - select and mark as read
+    const handleRoomClick = (room: RoomWithMeta) => {
+        // Call the original onRoomSelect
+        onRoomSelect(room.id)
+        // Mark as read if there's a last message
+        if (onMarkAsRead && room.last_message_at) {
+            const messageTime = new Date(room.last_message_at).getTime()
+            onMarkAsRead(room.id, messageTime)
+        }
+    }
 
     const loadRooms = useCallback(async () => {
         try {
@@ -43,6 +85,27 @@ export default function RoomSidebar({
                 names[result.id] = result.name
             }
             setDisplayNames(names)
+
+            // Get the other user IDs from personal chats
+            const personalChats = userRooms.filter(r => r.is_personal)
+            const otherUserIds = new Set<string>()
+
+            // For each personal chat, we need to get the other user's ID
+            // We'll get it from the display name - the display name IS the other user's username
+            // Then we find the matching user from our users list
+            const allUsers = await adminService.getAllUsersForSearch()
+            const usernameToId: Record<string, string> = {}
+            allUsers.forEach(u => {
+                usernameToId[u.username.toLowerCase()] = u.id
+            })
+
+            for (const chat of personalChats) {
+                const displayName = names[chat.id]?.toLowerCase()
+                if (displayName && usernameToId[displayName]) {
+                    otherUserIds.add(usernameToId[displayName])
+                }
+            }
+            setPersonalChatUserIds(otherUserIds)
         } catch (err) {
             console.error('Failed to load rooms:', err)
         } finally {
@@ -50,8 +113,36 @@ export default function RoomSidebar({
         }
     }, [currentUserId])
 
+    // Load users for search
+    const loadUsers = useCallback(async () => {
+        if (!currentUserId) return
+        setLoadingUsers(true)
+        try {
+            const allUsers = await adminService.getAllUsersForSearch()
+            // Filter out current user
+            setUsers(allUsers.filter(u => u.id !== currentUserId))
+        } catch (err) {
+            console.error('Failed to load users:', err)
+        } finally {
+            setLoadingUsers(false)
+        }
+    }, [currentUserId])
+
+    // Handle user selection to create/open direct message
+    const handleUserSelect = async (user: Profile) => {
+        try {
+            const room = await chatService.getOrCreatePersonalChat(currentUserId, user.id)
+            loadRooms() // Refresh rooms to show the new personal chat
+            onRoomSelect(room.id)
+            setSearchQuery('') // Clear search after selection
+        } catch (err) {
+            console.error('Failed to create personal chat:', err)
+        }
+    }
+
     useEffect(() => {
         loadRooms()
+        loadUsers()
 
         // Subscribe to room changes
         const unsubscribeRooms = chatService.subscribeToUserRooms(currentUserId, loadRooms)
@@ -59,7 +150,7 @@ export default function RoomSidebar({
         return () => {
             unsubscribeRooms()
         }
-    }, [currentUserId, loadRooms])
+    }, [currentUserId, loadRooms, loadUsers])
 
     // Subscribe to messages for all rooms to update last message info
     useEffect(() => {
@@ -79,9 +170,20 @@ export default function RoomSidebar({
         return displayName.toLowerCase().includes(searchQuery.toLowerCase())
     })
 
+    // Filter users based on search query - exclude users we already have personal chats with
+    const filteredUsers = searchQuery.trim()
+        ? users.filter(user =>
+            user.username.toLowerCase().includes(searchQuery.toLowerCase()) &&
+            !personalChatUserIds.has(user.id)
+        )
+        : []
+
     // Separate personal and group chats
     const personalChats = filteredRooms.filter(r => r.is_personal)
     const groupChats = filteredRooms.filter(r => !r.is_personal)
+
+    // Check if we're in search mode
+    const isSearching = searchQuery.trim().length > 0
 
     const handleGroupCreated = (roomId: string) => {
         setIsCreateGroupOpen(false)
@@ -109,23 +211,24 @@ export default function RoomSidebar({
 
     return (
         <>
-            <div className="w-64 h-full bg-zinc-900 border-r border-white/10 flex flex-col">
+            <div className="w-72 h-full bg-black/10 flex flex-col transition-all duration-300">
                 {/* Header */}
-                <div className="p-4 border-b border-white/10">
-                    <h2 className="text-lg font-semibold text-white mb-3">{UI_STRINGS.sidebar.messages}</h2>
+                <div className="px-8 py-8 space-y-6">
+                    <h2 className="text-2xl font-semibold tracking-tight text-white font-heading">{UI_STRINGS.sidebar.messages}</h2>
 
                     {/* Search */}
-                    <div className="relative">
+                    <div className="relative group">
                         <input
                             type="text"
                             placeholder={UI_STRINGS.sidebar.searchPlaceholder}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 pl-9 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onFocus={loadUsers} // Load users when user starts searching
+                            className="w-full bg-white/[0.03] border-none rounded-md py-2.5 px-4 pl-10 text-xs text-white placeholder-zinc-600 focus:bg-white/[0.06] focus:ring-1 focus:ring-zinc-800 outline-none transition-all"
                         />
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"
+                            className="h-4 w-4 text-zinc-700 absolute left-3 top-1/2 -translate-y-1/2"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -143,8 +246,39 @@ export default function RoomSidebar({
                         </div>
                     ) : (
                         <>
+                            {/* Search Results - Users */}
+                            {isSearching && filteredUsers.length > 0 && (
+                                <div className="mb-2">
+                                    <div className="px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                        {UI_STRINGS.sidebar.users}
+                                    </div>
+                                    {filteredUsers.map((user) => (
+                                        <button
+                                            key={user.id}
+                                            onClick={() => handleUserSelect(user)}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
+                                        >
+                                            {/* Avatar */}
+                                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium shrink-0">
+                                                {user.username.charAt(0).toUpperCase()}
+                                            </div>
+
+                                            {/* User Info */}
+                                            <div className="flex-1 min-w-0 text-left">
+                                                <p className="text-sm font-medium text-white truncate">
+                                                    {user.username}
+                                                </p>
+                                                <p className="text-xs text-blue-500 truncate mt-0.5">
+                                                    {UI_STRINGS.sidebar.startConversation}
+                                                </p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
                             {/* Personal Chats Section */}
-                            {personalChats.length > 0 && (
+                            {(!isSearching || personalChats.length > 0) && (
                                 <div className="mb-2">
                                     <div className="px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                                         {UI_STRINGS.sidebar.directMessages}
@@ -152,7 +286,7 @@ export default function RoomSidebar({
                                     {personalChats.map((room) => (
                                         <button
                                             key={room.id}
-                                            onClick={() => onRoomSelect(room.id)}
+                                            onClick={() => handleRoomClick(room)}
                                             className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${currentRoomId === room.id ? 'bg-white/10' : ''
                                                 }`}
                                         >
@@ -164,16 +298,21 @@ export default function RoomSidebar({
                                             {/* Room Info */}
                                             <div className="flex-1 min-w-0 text-left">
                                                 <div className="flex items-center justify-between gap-2">
-                                                    <p className="text-sm font-medium text-white truncate">
+                                                    <p className={`text-sm font-medium text-white truncate ${isRoomUnread(room) ? 'font-bold' : ''}`}>
                                                         {displayNames[room.id] || UI_STRINGS.common.loading}
                                                     </p>
-                                                    {room.last_message_at && (
-                                                        <span className="text-[10px] text-zinc-500 whitespace-nowrap">
-                                                            {formatLastMessage(room.last_message_at)}
-                                                        </span>
-                                                    )}
+                                                    <div className="flex items-center gap-1">
+                                                        {isRoomUnread(room) && (
+                                                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                                        )}
+                                                        {room.last_message_at && (
+                                                            <span className="text-[10px] text-zinc-500 whitespace-nowrap">
+                                                                {formatLastMessage(room.last_message_at)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <p className="text-xs text-zinc-500 truncate mt-0.5">
+                                                <p className={`text-xs text-zinc-500 truncate mt-0.5 ${isRoomUnread(room) ? 'font-bold text-zinc-300' : ''}`}>
                                                     {room.last_message_content ? (
                                                         <>
                                                             <span className="text-zinc-400">{room.last_message_sender}: </span>
@@ -190,7 +329,7 @@ export default function RoomSidebar({
                             )}
 
                             {/* Group Chats Section */}
-                            {groupChats.length > 0 && (
+                            {(!isSearching || groupChats.length > 0) && (
                                 <div className="mb-2">
                                     <div className="px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                                         {UI_STRINGS.sidebar.groupChats}
@@ -198,7 +337,7 @@ export default function RoomSidebar({
                                     {groupChats.map((room) => (
                                         <button
                                             key={room.id}
-                                            onClick={() => onRoomSelect(room.id)}
+                                            onClick={() => handleRoomClick(room)}
                                             className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${currentRoomId === room.id ? 'bg-white/10' : ''
                                                 }`}
                                         >
@@ -212,16 +351,21 @@ export default function RoomSidebar({
                                             {/* Room Info */}
                                             <div className="flex-1 min-w-0 text-left">
                                                 <div className="flex items-center justify-between gap-2">
-                                                    <p className="text-sm font-medium text-white truncate">
+                                                    <p className={`text-sm font-medium text-white truncate ${isRoomUnread(room) ? 'font-bold' : ''}`}>
                                                         {displayNames[room.id] || room.name || UI_STRINGS.sidebar.unnamedGroup}
                                                     </p>
-                                                    {room.last_message_at && (
-                                                        <span className="text-[10px] text-zinc-500 whitespace-nowrap">
-                                                            {formatLastMessage(room.last_message_at)}
-                                                        </span>
-                                                    )}
+                                                    <div className="flex items-center gap-1">
+                                                        {isRoomUnread(room) && (
+                                                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                                        )}
+                                                        {room.last_message_at && (
+                                                            <span className="text-[10px] text-zinc-500 whitespace-nowrap">
+                                                                {formatLastMessage(room.last_message_at)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <p className="text-xs text-zinc-500 truncate mt-0.5">
+                                                <p className={`text-xs text-zinc-500 truncate mt-0.5 ${isRoomUnread(room) ? 'font-bold text-zinc-300' : ''}`}>
                                                     {room.last_message_content ? (
                                                         <>
                                                             <span className="text-zinc-400">{room.last_message_sender}: </span>
@@ -238,7 +382,7 @@ export default function RoomSidebar({
                             )}
 
                             {/* Empty State */}
-                            {personalChats.length === 0 && groupChats.length === 0 && (
+                            {!isSearching && personalChats.length === 0 && groupChats.length === 0 && (
                                 <div className="text-center py-8 px-4">
                                     <p className="text-sm text-zinc-500">{UI_STRINGS.sidebar.noConversations}</p>
                                     <p className="text-xs text-zinc-600 mt-1">{UI_STRINGS.sidebar.noConversationsHint}</p>
@@ -249,7 +393,7 @@ export default function RoomSidebar({
                 </div>
 
                 {/* Create Group Button */}
-                <div className="p-4 border-t border-white/10">
+                <div className="px-8 py-8">
                     <button
                         onClick={() => setIsCreateGroupOpen(true)}
                         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"

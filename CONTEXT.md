@@ -1,9 +1,9 @@
 # PROJECT: Digital Tambayan (Master Context)
 
 ## 0. Current Session Status
-- **Current Goal:** Session 1.11: Sidebar Metadata & Admin Enhancements
-- **Last Completed:** Fixed admin chat clearing permissions and implemented UI strings manifest.
-- **Next Steps:** Polish UI and prepare for final testing.
+- **Current Goal:** Session 1.12: Unread Message System & User Search
+- **Last Completed:** Fixed chat scroll issue - chat now scrolls to bottom properly including system messages
+- **Next Steps:** Fix the unread message tracking system and polish the user search feature.
 
 ## 1. Core Identity & Manifest
 - **Bot Name:** Berto
@@ -95,6 +95,12 @@
   - [x] Fixed "Not Authorized" bug for Website Admins clearing any chat room
   - [x] Implemented `UI_STRINGS` manifest in `src/config/uiStrings.ts`
   - [x] Improved empty chat state UI ("No messages here yet")
+- [x] Session 1.12: Unread Message System & User Search
+  - [x] Added unread message tracking with localStorage persistence
+  - [x] Added user search in sidebar to start direct messages
+  - [x] Fixed chat scroll issue - chat now scrolls to bottom properly including system messages
+  - [x] Added UI strings for user search ("Users", "Start a conversation")
+  - [x] Updated typing indicator to clear on room change
 
 ## 7. Active Constraints
 - Auth: Custom Sign-up/Login forms required.
@@ -167,7 +173,22 @@
 - `src/components/admin/AdminDashboard.tsx` - Refactored to use UI manifest labels
 - `src/components/admin/RoomManager.tsx` - Refactored to use UI manifest labels
 
-## 13. Architecture Overview
+## 13. Files Created/Modified in Session 1.12 (Unread System & User Search)
+
+### New Files Created
+- (none)
+
+### Modified Files
+- `src/app/layout.tsx` - Updated metadata title to "Digital Tambayan" and added React import
+- `src/components/Dashboard.tsx` - Added unread message tracking with localStorage, added `handleSendMessage` wrapper, added `handleRoomSelectWithRead` function
+- `src/components/chat/RoomSidebar.tsx` - Added unread message indicators (blue dot), user search functionality to start direct messages, `isRoomUnread` function, `handleRoomClick` function, filtered users logic
+- `src/config/uiStrings.ts` - Added UI strings for "users" and "startConversation"
+- `src/hooks/useTypingIndicator.ts` - Added cleanup of typing users when room changes
+
+### Known Issues
+- **Unread System Broken**: The unread message tracking logic has issues - it compares timestamps incorrectly and the system needs debugging to properly highlight unread rooms.
+
+## 14. Architecture Overview
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -185,7 +206,7 @@
 └────────────────┴─────────────────────────────┴───────────────┘
 ```
 
-## 13. Service Layer API Reference
+## 15. Service Layer API Reference
 
 ### chatService
 | Method | Description |
