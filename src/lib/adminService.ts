@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client'
-import { Profile, Room, ChatSettings, RoomMember, RoomMemberWithUsername, RoomWithMeta } from '@/types/database'
+import { Profile, Room, ChatSettings, RoomMember, RoomMemberWithUsername, RoomWithMeta, RoomMemberNickname } from '@/types/database'
 
 const supabase = createClient()
 
@@ -49,6 +49,54 @@ export const adminService = {
 
         if (error) throw error
         if (data !== 'success') throw new Error(data)
+    },
+
+    /**
+     * Deletes a room and all its messages and members.
+     * @param roomId - The ID of the room to delete
+     * @param userId - The ID of the user attempting to delete (for authorization)
+     */
+    async deleteRoom(roomId: string, userId: string): Promise<void> {
+        if (!userId) {
+            throw new Error('User ID is required')
+        }
+
+        // Verify user is the room owner
+        const { data: membership, error: membershipError } = await supabase
+            .from('room_members')
+            .select('role')
+            .eq('room_id', roomId)
+            .eq('user_id', userId)
+            .single()
+
+        if (membershipError || !membership || membership.role !== 'owner') {
+            throw new Error('Unauthorized: Only room owners can delete rooms')
+        }
+
+        // Delete all messages in the room first
+        await this.deleteAllMessages(roomId)
+
+        // Delete all room members (this will cascade due to foreign key constraints)
+        const { error: memberError } = await supabase
+            .from('room_members')
+            .delete()
+            .eq('room_id', roomId)
+
+        if (memberError) {
+            console.error('Failed to delete room members:', memberError)
+            throw new Error('Failed to delete room members')
+        }
+
+        // Delete the room
+        const { error: roomError } = await supabase
+            .from('rooms')
+            .delete()
+            .eq('id', roomId)
+
+        if (roomError) {
+            console.error('Failed to delete room:', roomError)
+            throw new Error('Failed to delete room')
+        }
     },
 
     /**
@@ -476,5 +524,71 @@ export const adminService = {
 
         if (error) throw error
         return data || []
+    },
+
+    /**
+     * Gets all nicknames set by a user in a specific room.
+     * @param roomId - The ID of the room
+     * @param setterUserId - The ID of the user who set the nicknames
+     */
+    async getMemberNicknames(roomId: string, setterUserId: string): Promise<RoomMemberNickname[]> {
+        const { data, error } = await supabase.rpc('get_member_nicknames', {
+            p_room_id: roomId,
+            p_setter_user_id: setterUserId
+        })
+
+        if (error) {
+            console.error('Failed to get member nicknames:', error)
+            return []
+        }
+
+        return data || []
+    },
+
+    /**
+     * Sets or updates a nickname for a room member.
+     * @param roomId - The ID of the room
+     * @param targetUserId - The ID of the user being nicknamed
+     * @param nickname - The nickname to set
+     * @param setterUserId - The ID of the user setting the nickname
+     * @returns Status string: 'success', 'not_a_member', 'target_not_in_room', 'empty_nickname', 'nickname_too_long'
+     */
+    async setMemberNickname(
+        roomId: string,
+        targetUserId: string,
+        nickname: string,
+        setterUserId: string
+    ): Promise<string> {
+        const { data, error } = await supabase.rpc('set_member_nickname', {
+            p_room_id: roomId,
+            p_target_user_id: targetUserId,
+            p_nickname: nickname,
+            p_setter_user_id: setterUserId
+        })
+
+        if (error) throw error
+        return data
+    },
+
+    /**
+     * Deletes a nickname for a room member.
+     * @param roomId - The ID of the room
+     * @param targetUserId - The ID of the user whose nickname is being removed
+     * @param setterUserId - The ID of the user who set the nickname
+     * @returns Status string: 'success', 'nickname_not_found'
+     */
+    async deleteMemberNickname(
+        roomId: string,
+        targetUserId: string,
+        setterUserId: string
+    ): Promise<string> {
+        const { data, error } = await supabase.rpc('delete_member_nickname', {
+            p_room_id: roomId,
+            p_target_user_id: targetUserId,
+            p_setter_user_id: setterUserId
+        })
+
+        if (error) throw error
+        return data
     }
 }

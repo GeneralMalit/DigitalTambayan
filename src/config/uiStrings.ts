@@ -48,5 +48,17 @@ export const UI_STRINGS = {
         save: "Save",
         error: "Error",
         success: "Success",
+    },
+    nicknames: {
+        editNicknames: "Edit Nicknames",
+        nickname: "Nickname",
+        noNickname: "No nickname set",
+        setNickname: "Set nickname",
+        saveNickname: "Save",
+        cancel: "Cancel",
+        removeNickname: "Remove nickname",
+        placeholder: "Enter nickname...",
+        panelTitle: "Nicknames",
+        editNicknameFor: (username: string) => `Edit nickname for ${username}`,
     }
 };

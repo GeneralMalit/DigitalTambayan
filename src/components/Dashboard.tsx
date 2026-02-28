@@ -30,6 +30,9 @@ export default function Dashboard() {
     // Room display name
     const [roomDisplayName, setRoomDisplayName] = useState<string>('')
 
+    // Nicknames for current room members
+    const [nicknames, setNicknames] = useState<Record<string, string>>({})
+
     // Track last read message ID for each room (for unread highlighting)
     // Using localStorage to persist across page refreshes
     const [lastReadMessageId, setLastReadMessageId] = useState<Record<string, number>>(() => {
@@ -253,6 +256,49 @@ export default function Dashboard() {
         }
     }, [currentRoom, profile])
 
+    // Load nicknames for current room
+    const loadNicknames = useCallback(async () => {
+        if (!currentRoom?.id || !profile?.id) return
+
+        try {
+            const data = await adminService.getMemberNicknames(currentRoom.id, profile.id)
+            const nicknameMap: Record<string, string> = {}
+            data.forEach((n) => {
+                nicknameMap[n.target_user_id] = n.nickname
+            })
+            setNicknames(nicknameMap)
+        } catch (err: any) {
+            console.error('Failed to load nicknames:', err)
+        }
+    }, [currentRoom?.id, profile?.id])
+
+    // Handle nickname change - refresh nicknames and room display name (for personal chats)
+    const handleNicknameChange = useCallback(async () => {
+        if (currentRoom && profile) {
+            // Reload nicknames
+            await loadNicknames()
+            // Refresh room display name (important for personal chats)
+            const displayName = await chatService.getRoomDisplayName(currentRoom.id, profile.id)
+            setRoomDisplayName(displayName)
+        }
+    }, [currentRoom, profile, loadNicknames])
+
+    // Load nicknames when room changes
+    useEffect(() => {
+        loadNicknames()
+    }, [loadNicknames])
+
+    // Subscribe to nickname changes
+    useEffect(() => {
+        if (!currentRoom?.id || !profile?.id) return
+
+        const unsubscribe = chatService.subscribeToNicknames(currentRoom.id, profile.id, loadNicknames)
+
+        return () => {
+            unsubscribe()
+        }
+    }, [currentRoom?.id, profile?.id, loadNicknames])
+
     if (loading) {
         return <div className="text-white">Loading your tambayan...</div>
     }
@@ -379,6 +425,7 @@ export default function Dashboard() {
                                         enableMessageDeletion={chatSettings?.enable_message_deletion ?? true}
                                         deletionThresholdMinutes={chatSettings?.deletion_threshold_minutes ?? 10}
                                         onMessageDeleted={handleMessageDeleted}
+                                        nicknames={nicknames}
                                     />
                                 )}
                             </div>
@@ -532,6 +579,7 @@ export default function Dashboard() {
                     onRoomLeft={handleRoomLeft}
                     onMemberChange={handleMemberChange}
                     onRoomNameChange={handleRoomNameChange}
+                    onNicknameChange={handleNicknameChange}
                 />
             )}
         </div>

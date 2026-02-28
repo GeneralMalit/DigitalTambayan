@@ -1,9 +1,10 @@
 'use client'
 
-import { RoomMemberWithUsername, Profile, Room } from '@/types/database'
+import { RoomMemberWithUsername, Profile, Room, RoomMemberNickname } from '@/types/database'
 import { adminService } from '@/lib/adminService'
 import { chatService } from '@/lib/chatService'
-import { useEffect, useState } from 'react'
+import { UI_STRINGS } from '@/config/uiStrings'
+import { useEffect, useState, useCallback } from 'react'
 import UserProfileModal from './UserProfileModal'
 
 interface MembersListProps {
@@ -14,6 +15,7 @@ interface MembersListProps {
     onRoomLeft: () => void
     onMemberChange: () => void
     onRoomNameChange?: () => void
+    onNicknameChange?: () => void
 }
 
 export default function MembersList({
@@ -23,7 +25,8 @@ export default function MembersList({
     onClose,
     onRoomLeft,
     onMemberChange,
-    onRoomNameChange
+    onRoomNameChange,
+    onNicknameChange
 }: MembersListProps) {
     const [members, setMembers] = useState<RoomMemberWithUsername[]>([])
     const [loading, setLoading] = useState(false)
@@ -39,6 +42,13 @@ export default function MembersList({
     const [newRoomName, setNewRoomName] = useState('')
     const [nameEditLoading, setNameEditLoading] = useState(false)
 
+    // Nickname editing state
+    const [nicknames, setNicknames] = useState<Record<string, string>>({})
+    const [isEditingNicknames, setIsEditingNicknames] = useState(false)
+    const [editingNicknameFor, setEditingNicknameFor] = useState<string | null>(null)
+    const [nicknameInput, setNicknameInput] = useState('')
+    const [nicknameLoading, setNicknameLoading] = useState(false)
+
     const isPersonalChat = room?.is_personal ?? false
     const isAdmin = currentUserRole === 'owner' || currentUserRole === 'admin'
 
@@ -48,7 +58,7 @@ export default function MembersList({
         }
     }, [isOpen, room])
 
-    const loadMembers = async () => {
+    const loadMembers = useCallback(async () => {
         if (!room) return
 
         setLoading(true)
@@ -66,7 +76,51 @@ export default function MembersList({
         } finally {
             setLoading(false)
         }
-    }
+    }, [room, currentUserId])
+
+    // Subscribe to real-time member changes when panel is open
+    useEffect(() => {
+        if (!isOpen || !room) return
+
+        const unsubscribe = chatService.subscribeToRoomMembers(room.id, loadMembers)
+
+        return () => {
+            unsubscribe()
+        }
+    }, [isOpen, room, loadMembers])
+
+    // Load nicknames when panel opens
+    const loadNicknames = useCallback(async () => {
+        if (!room || !currentUserId) return
+
+        try {
+            const data = await adminService.getMemberNicknames(room.id, currentUserId)
+            const nicknameMap: Record<string, string> = {}
+            data.forEach((n: RoomMemberNickname) => {
+                nicknameMap[n.target_user_id] = n.nickname
+            })
+            setNicknames(nicknameMap)
+        } catch (err: any) {
+            console.error('Failed to load nicknames:', err)
+        }
+    }, [room, currentUserId])
+
+    useEffect(() => {
+        if (isOpen && room) {
+            loadNicknames()
+        }
+    }, [isOpen, room, loadNicknames])
+
+    // Subscribe to nickname changes
+    useEffect(() => {
+        if (!isOpen || !room || !currentUserId) return
+
+        const unsubscribe = chatService.subscribeToNicknames(room.id, currentUserId, loadNicknames)
+
+        return () => {
+            unsubscribe()
+        }
+    }, [isOpen, room, currentUserId, loadNicknames])
 
     const handleLeaveRoom = async () => {
         if (!room) return
@@ -204,6 +258,24 @@ export default function MembersList({
         }
     }
 
+    const handleDeleteRoom = async () => {
+        if (!room) return
+
+        if (!confirm(`Are you sure you want to delete "${room.name || 'this room'}"? This will delete all messages and cannot be undone.`)) return
+
+        setActionLoading(true)
+        try {
+            await adminService.deleteRoom(room.id, currentUserId)
+            onRoomLeft()
+            onClose()
+        } catch (err: any) {
+            console.error('Failed to delete room:', err)
+            setError(err.message || 'Failed to delete room')
+        } finally {
+            setActionLoading(false)
+        }
+    }
+
     const openAddMemberModal = async () => {
         if (!room) return
 
@@ -279,7 +351,232 @@ export default function MembersList({
         }
     }
 
+    // Nickname editing handlers
+    const handleStartEditNickname = (userId: string, currentNickname?: string) => {
+        setEditingNicknameFor(userId)
+        setNicknameInput(currentNickname || '')
+    }
+
+    const handleCancelEditNickname = () => {
+        setEditingNicknameFor(null)
+        setNicknameInput('')
+    }
+
+    const handleSaveNickname = async (targetUserId: string) => {
+        if (!room || !currentUserId) return
+
+        const trimmedNickname = nicknameInput.trim()
+        const oldNickname = nicknames[targetUserId]
+        const member = members.find(m => m.user_id === targetUserId)
+        const displayName = oldNickname || member?.username || 'Someone'
+
+        if (!trimmedNickname) {
+            // Delete nickname if empty
+            setNicknameLoading(true)
+            try {
+                await adminService.deleteMemberNickname(room.id, targetUserId, currentUserId)
+                await loadNicknames()
+                // Notify parent to refresh
+                onNicknameChange?.()
+                // Send system message about nickname removal
+                await chatService.sendSystemMessage(room.id, `${displayName}'s nickname was removed`)
+            } catch (err: any) {
+                console.error('Failed to delete nickname:', err)
+                setError(err.message || 'Failed to remove nickname')
+            } finally {
+                setNicknameLoading(false)
+                setEditingNicknameFor(null)
+                setNicknameInput('')
+            }
+            return
+        }
+
+        // Only send system message if nickname actually changed
+        if (trimmedNickname === oldNickname) {
+            setEditingNicknameFor(null)
+            setNicknameInput('')
+            return
+        }
+
+        setNicknameLoading(true)
+        try {
+            const result = await adminService.setMemberNickname(room.id, targetUserId, trimmedNickname, currentUserId)
+            if (result === 'success') {
+                await loadNicknames()
+                // Notify parent to refresh
+                onNicknameChange?.()
+                // Send system message about nickname change
+                await chatService.sendSystemMessage(room.id, `${displayName}'s nickname was set to ${trimmedNickname}`)
+                setEditingNicknameFor(null)
+                setNicknameInput('')
+            } else {
+                setError(`Failed to set nickname: ${result}`)
+            }
+        } catch (err: any) {
+            console.error('Failed to set nickname:', err)
+            setError(err.message || 'Failed to set nickname')
+        } finally {
+            setNicknameLoading(false)
+        }
+    }
+
+    const handleNicknameKeyDown = (e: React.KeyboardEvent, targetUserId: string) => {
+        if (e.key === 'Enter') {
+            handleSaveNickname(targetUserId)
+        } else if (e.key === 'Escape') {
+            handleCancelEditNickname()
+        }
+    }
+
+    const getDisplayName = (member: RoomMemberWithUsername) => {
+        return nicknames[member.user_id] || member.username
+    }
+
     if (!isOpen || !room) return null
+
+    // For personal chats, show nickname editing panel
+    if (isPersonalChat) {
+        return (
+            <>
+                {/* Backdrop */}
+                <div
+                    className="fixed inset-0 bg-black/50 z-40"
+                    onClick={onClose}
+                />
+
+                {/* Sidebar Panel - Personal Chat Panel */}
+                <div className="fixed right-0 top-0 h-full w-80 bg-zinc-900 border-l border-white/10 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-white/10">
+                        <h3 className="text-lg font-semibold text-white">Personal Chat</h3>
+                        <button
+                            onClick={onClose}
+                            className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Error Message */}
+                    {error && (
+                        <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                            {error}
+                            <button
+                                onClick={() => setError(null)}
+                                className="ml-2 text-red-400 hover:text-red-300"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Members with Nicknames */}
+                    <div className="flex-1 overflow-y-auto p-4">
+                        <div className="mb-4">
+                            <h4 className="text-xs text-zinc-500 uppercase tracking-wide mb-3">
+                                {UI_STRINGS.nicknames.editNicknames}
+                            </h4>
+                            <p className="text-xs text-zinc-600 mb-4">
+                                Set nicknames for this conversation. Only you will see these names.
+                            </p>
+                        </div>
+
+                        {loading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                            </div>
+                        ) : members.length === 0 ? (
+                            <div className="text-center py-8 text-zinc-500">
+                                <p className="text-sm">No members found</p>
+                            </div>
+                        ) : (
+                            <ul className="space-y-3">
+                                {members.map((member) => {
+                                    const isCurrentUser = member.user_id === currentUserId
+                                    const currentNickname = nicknames[member.user_id]
+                                    const isEditingThis = editingNicknameFor === member.user_id
+
+                                    return (
+                                        <li
+                                            key={member.user_id}
+                                            className="flex items-center gap-3 p-3 rounded-lg bg-white/5"
+                                        >
+                                            {/* Avatar */}
+                                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
+                                                {member.username?.charAt(0).toUpperCase() || '?'}
+                                            </div>
+
+                                            {/* Name and Nickname */}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-white truncate">
+                                                    {member.username}
+                                                    {isCurrentUser && (
+                                                        <span className="text-zinc-500 text-xs ml-1">(you)</span>
+                                                    )}
+                                                </p>
+                                                {currentNickname && !isEditingThis && (
+                                                    <p className="text-xs text-blue-400">
+                                                        {UI_STRINGS.nicknames.nickname}: {currentNickname}
+                                                    </p>
+                                                )}
+                                                {!currentNickname && !isEditingThis && (
+                                                    <p className="text-xs text-zinc-600">
+                                                        {UI_STRINGS.nicknames.noNickname}
+                                                    </p>
+                                                )}
+
+                                                {/* Edit Nickname Input */}
+                                                {isEditingThis && (
+                                                    <div className="flex items-center gap-1 mt-2 min-w-0">
+                                                        <input
+                                                            type="text"
+                                                            value={nicknameInput}
+                                                            onChange={(e) => setNicknameInput(e.target.value)}
+                                                            onKeyDown={(e) => handleNicknameKeyDown(e, member.user_id)}
+                                                            placeholder={UI_STRINGS.nicknames.placeholder}
+                                                            className="flex-1 min-w-0 bg-white/10 border border-white/10 rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            autoFocus
+                                                            disabled={nicknameLoading}
+                                                            maxLength={50}
+                                                        />
+                                                        <button
+                                                            onClick={() => handleSaveNickname(member.user_id)}
+                                                            disabled={nicknameLoading}
+                                                            className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-white/10 rounded transition-colors disabled:opacity-50 shrink-0"
+                                                            title="Save nickname"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Edit Button */}
+                                            {!isEditingThis && (
+                                                <button
+                                                    onClick={() => handleStartEditNickname(member.user_id, currentNickname)}
+                                                    className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                                                    title={UI_STRINGS.nicknames.setNickname}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        )}
+                    </div>
+                </div>
+            </>
+        )
+    }
 
     return (
         <>
@@ -293,7 +590,7 @@ export default function MembersList({
             <div className="fixed right-0 top-0 h-full w-80 bg-zinc-900 border-l border-white/10 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-white/10">
-                    <h3 className="text-lg font-semibold text-white">Members</h3>
+                    <h3 className="text-lg font-semibold text-white">Group Chat</h3>
                     <button
                         onClick={onClose}
                         className="p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -375,6 +672,90 @@ export default function MembersList({
                     </div>
                 )}
 
+                {/* Nicknames Section */}
+                <div className="px-4 py-3 border-b border-white/10">
+                    <div className="flex items-center justify-between">
+                        <label className="text-xs text-zinc-500 uppercase tracking-wide">
+                            {UI_STRINGS.nicknames.editNicknames}
+                        </label>
+                        <button
+                            onClick={() => setIsEditingNicknames(!isEditingNicknames)}
+                            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                            {isEditingNicknames ? UI_STRINGS.common.cancel : UI_STRINGS.nicknames.editNicknames}
+                        </button>
+                    </div>
+                    {!isEditingNicknames && (
+                        <p className="text-xs text-zinc-600 mt-1">
+                            {Object.keys(nicknames).length > 0
+                                ? `${Object.keys(nicknames).length} nickname(s) set`
+                                : UI_STRINGS.nicknames.noNickname
+                            }
+                        </p>
+                    )}
+                    {isEditingNicknames && (
+                        <div className="mt-3 space-y-2">
+                            <p className="text-xs text-zinc-600 mb-2">
+                                Set nicknames for members. Only you will see these names.
+                            </p>
+                            {members.map((member) => {
+                                const currentNickname = nicknames[member.user_id]
+                                const isEditingThis = editingNicknameFor === member.user_id
+
+                                return (
+                                    <div key={member.user_id} className="flex items-center gap-2 p-2 bg-white/5 rounded">
+                                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-medium shrink-0">
+                                            {member.username?.charAt(0).toUpperCase() || '?'}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs text-white truncate">{member.username}</p>
+                                            {currentNickname && !isEditingThis && (
+                                                <p className="text-xs text-blue-400">{currentNickname}</p>
+                                            )}
+                                            {isEditingThis && (
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <input
+                                                        type="text"
+                                                        value={nicknameInput}
+                                                        onChange={(e) => setNicknameInput(e.target.value)}
+                                                        onKeyDown={(e) => handleNicknameKeyDown(e, member.user_id)}
+                                                        placeholder={UI_STRINGS.nicknames.placeholder}
+                                                        className="flex-1 bg-white/10 border border-white/10 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        autoFocus
+                                                        disabled={nicknameLoading}
+                                                        maxLength={50}
+                                                    />
+                                                    <button
+                                                        onClick={() => handleSaveNickname(member.user_id)}
+                                                        disabled={nicknameLoading}
+                                                        className="p-1 text-zinc-500 hover:text-zinc-300 hover:bg-white/10 rounded"
+                                                        title="Save nickname"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {!isEditingThis && (
+                                            <button
+                                                onClick={() => handleStartEditNickname(member.user_id, currentNickname)}
+                                                className="p-1 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                                                title={UI_STRINGS.nicknames.setNickname}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+
                 {/* Members List */}
                 <div className="flex-1 overflow-y-auto p-2">
                     {loading ? (
@@ -417,11 +798,16 @@ export default function MembersList({
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <p className="text-sm font-medium text-white truncate">
-                                                    {member.username}
+                                                    {getDisplayName(member)}
                                                     {isCurrentUser && (
                                                         <span className="text-zinc-500 text-xs ml-1">(you)</span>
                                                     )}
                                                 </p>
+                                                {nicknames[member.user_id] && (
+                                                    <span className="text-xs text-zinc-600 truncate">
+                                                        ({member.username})
+                                                    </span>
+                                                )}
                                             </div>
                                             <p className="text-xs text-zinc-500 capitalize">
                                                 {member.role}
@@ -492,17 +878,33 @@ export default function MembersList({
                         </button>
                     )}
 
-                    {/* Leave Room Button */}
-                    <button
-                        onClick={handleLeaveRoom}
-                        disabled={actionLoading}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-500 font-medium transition-colors disabled:opacity-50"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4.414l-4.293 4.293a1 1 0 01-1.414 0L4 7.414 5.414 6l3.293 3.293L13 5l1 2.414z" clipRule="evenodd" />
-                        </svg>
-                        Leave Room
-                    </button>
+                    {/* Leave Room Button - Only show for group chats, not personal chats */}
+                    {!isPersonalChat && (
+                        <button
+                            onClick={handleLeaveRoom}
+                            disabled={actionLoading}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-500 font-medium transition-colors disabled:opacity-50"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4.414l-4.293 4.293a1 1 0 01-1.414 0L4 7.414 5.414 6l3.293 3.293L13 5l1 2.414z" clipRule="evenodd" />
+                            </svg>
+                            Leave Room
+                        </button>
+                    )}
+
+                    {/* Delete Room Button - Only for room owners, not personal chats */}
+                    {!isPersonalChat && currentUserRole === 'owner' && (
+                        <button
+                            onClick={handleDeleteRoom}
+                            disabled={actionLoading}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium transition-colors disabled:opacity-50"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            Delete Room
+                        </button>
+                    )}
                 </div>
 
                 {/* Member Count */}

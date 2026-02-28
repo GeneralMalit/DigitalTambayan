@@ -11,27 +11,57 @@ ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS display_name TEXT;
 CREATE OR REPLACE FUNCTION get_or_create_personal_chat(
     p_user1_id UUID,
     p_user2_id UUID
-) RETURNS UUID AS $$
+) RETURNS UUID AS $
 DECLARE
     v_room_id UUID;
+    v_slug TEXT;
 BEGIN
-    -- Check if a personal chat already exists between these users
-    SELECT rm1.room_id INTO v_room_id
-    FROM public.room_members rm1
-    INNER JOIN public.room_members rm2 ON rm1.room_id = rm2.room_id
-    INNER JOIN public.rooms r ON r.id = rm1.room_id
-    WHERE rm1.user_id = p_user1_id
-    AND rm2.user_id = p_user2_id
-    AND r.is_personal = TRUE;
+    -- Generate the slug (use consistent ordering of user IDs)
+    v_slug := 'personal-' || LEAST(p_user1_id, p_user2_id) || '-' || GREATEST(p_user1_id, p_user2_id);
+    
+    -- First check if a room with this slug already exists
+    SELECT r.id INTO v_room_id
+    FROM public.rooms r
+    WHERE r.slug = v_slug;
     
     IF v_room_id IS NOT NULL THEN
-        RETURN v_room_id;
+        -- Room exists, check if both users are members
+        IF EXISTS (
+            SELECT 1 FROM public.room_members rm
+            WHERE rm.room_id = v_room_id AND rm.user_id = p_user1_id
+        ) AND EXISTS (
+            SELECT 1 FROM public.room_members rm
+            WHERE rm.room_id = v_room_id AND rm.user_id = p_user2_id
+        ) THEN
+            -- Both users are members, return the room
+            RETURN v_room_id;
+        ELSE
+            -- Room exists but one or both users are not members
+            -- Add missing members
+            IF NOT EXISTS (
+                SELECT 1 FROM public.room_members rm
+                WHERE rm.room_id = v_room_id AND rm.user_id = p_user1_id
+            ) THEN
+                INSERT INTO public.room_members (room_id, user_id, role)
+                VALUES (v_room_id, p_user1_id, 'member');
+            END IF;
+            
+            IF NOT EXISTS (
+                SELECT 1 FROM public.room_members rm
+                WHERE rm.room_id = v_room_id AND rm.user_id = p_user2_id
+            ) THEN
+                INSERT INTO public.room_members (room_id, user_id, role)
+                VALUES (v_room_id, p_user2_id, 'member');
+            END IF;
+            
+            RETURN v_room_id;
+        END IF;
     END IF;
     
     -- Create new personal chat room
     INSERT INTO public.rooms (slug, name, is_personal)
     VALUES (
-        'personal-' || p_user1_id || '-' || p_user2_id,
+        v_slug,
         'Personal Chat',
         TRUE
     )
@@ -45,7 +75,7 @@ BEGIN
     
     RETURN v_room_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Leave Room with Auto-Promotion and Cleanup
 CREATE OR REPLACE FUNCTION leave_room(
@@ -144,7 +174,7 @@ BEGIN
         r.slug,
         r.name,
         r.is_personal,
-        r.display_name,
+        get_room_display_name(r.id, p_user_id) as display_name,
         rm.role,
         lm.created_at as last_message_at,
         lm.content as last_message_content,
@@ -164,17 +194,40 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION get_room_display_name(
     p_room_id UUID,
     p_current_user_id UUID
-) RETURNS TEXT AS $$
+) RETURNS TEXT AS $
 DECLARE
     v_is_personal BOOLEAN;
     v_room_name TEXT;
     v_other_username TEXT;
+    v_nickname TEXT;
+    v_other_user_id UUID;
 BEGIN
     SELECT is_personal, name INTO v_is_personal, v_room_name
     FROM public.rooms WHERE id = p_room_id;
     
     IF v_is_personal THEN
-        -- For personal chats, return the other user's username
+        -- First, find the other user's ID in this personal chat
+        SELECT rm.user_id INTO v_other_user_id
+        FROM public.room_members rm
+        WHERE rm.room_id = p_room_id
+        AND rm.user_id != p_current_user_id
+        LIMIT 1;
+        
+        -- If we found another user, check if current user has set a nickname for them
+        IF v_other_user_id IS NOT NULL THEN
+            SELECT rmn.nickname INTO v_nickname
+            FROM public.room_member_nicknames rmn
+            WHERE rmn.room_id = p_room_id
+            AND rmn.setter_user_id = p_current_user_id
+            AND rmn.target_user_id = v_other_user_id;
+            
+            -- If nickname exists and is not empty, use it
+            IF v_nickname IS NOT NULL AND v_nickname != '' THEN
+                RETURN v_nickname;
+            END IF;
+        END IF;
+        
+        -- No nickname set, fall back to the other user's username
         SELECT p.username INTO v_other_username
         FROM public.room_members rm
         INNER JOIN public.profiles p ON rm.user_id = p.id
@@ -200,7 +253,7 @@ BEGIN
         END IF;
     END IF;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Get User Room Role
 CREATE OR REPLACE FUNCTION get_user_room_role(

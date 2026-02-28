@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/client'
 import { BOT_CONFIG } from '@/config/botManifest'
 import { Message, Room, RoomWithMeta } from '@/types/database'
-
+import { aiService } from '@/lib/aiService'
 const supabase = createClient()
 
 // Get random response from placeholder responses array
@@ -38,51 +38,105 @@ export const chatService = {
 
         // Berto Logic: Check for mention trigger
         if (content.toLowerCase().includes(BOT_CONFIG.mentionTrigger.toLowerCase())) {
-            this.triggerBotResponse(roomId)
+            this.triggerBotResponse(roomId, userId)
         }
 
         return messageWithSystemFlag
     },
 
     /**
-     * Handles the delayed bot response.
-     * This is a STUB implementation that will be replaced with real Berto AI functionality in the future.
-     * Currently, it just adds a placeholder system message when Berto is mentioned.
+     * Handles the delayed bot response using the Gemini API.
+     * Enforces session-based rate limits and provides recent chat context.
+     * @param roomId - The room ID where the bot was triggered
+     * @param triggerUserId - The ID of the user who triggered the bot (for nickname perspective)
      */
-    async triggerBotResponse(roomId: string) {
+    async triggerBotResponse(roomId: string, triggerUserId: string | null = null) {
+        // Enforce session-based cooldown
+        if (typeof window !== 'undefined') {
+            const lastCallStr = sessionStorage.getItem('lastBotCallTime')
+            const now = Date.now()
+
+            if (lastCallStr) {
+                const lastCall = parseInt(lastCallStr, 10)
+                if (now - lastCall < BOT_CONFIG.cooldownSeconds * 1000) {
+                    console.log(`Bot on cooldown. Remaining: ${Math.ceil((BOT_CONFIG.cooldownSeconds * 1000 - (now - lastCall)) / 1000)}s`)
+                    // Rate limited: Send placeholder message
+                    await this.sendTestSystemMessage(roomId, getRandomResponse())
+                    return
+                }
+            }
+
+            // Set cooldown immediately to prevent concurrent bypasses
+            sessionStorage.setItem('lastBotCallTime', now.toString())
+        }
+
         setTimeout(async () => {
             try {
-                console.error('Berto AI is unimplemented - this is a STUB implementation')
+                // Fetch recent messages for context
+                const messages = await this.getMessages(roomId, BOT_CONFIG.contextLength)
 
-                // Try to send placeholder system message to database first
-                const response = getRandomResponse()
-                const { data, error } = await supabase
+                // Fetch nicknames set by the triggerer in this room
+                let nicknamesMap: Record<string, string> = {}
+                if (triggerUserId) {
+                    const { data: nicknamesData, error: nickError } = await supabase.rpc('get_member_nicknames', {
+                        p_room_id: roomId,
+                        p_setter_user_id: triggerUserId
+                    })
+
+                    if (!nickError && nicknamesData) {
+                        nicknamesMap = (nicknamesData as any[]).reduce((acc: Record<string, string>, item: { target_user_id: string, nickname: string }) => {
+                            acc[item.target_user_id] = item.nickname
+                            return acc
+                        }, {})
+                    }
+                }
+
+                // Construct formatted context text
+                const formattedContext = messages
+                    .filter(m => {
+                        // Ignore system messages
+                        if (m.is_system) return false;
+                        // Ignore bot messages if configured
+                        if (BOT_CONFIG.ignoreBotMessages && m.is_bot) return false;
+                        return true;
+                    })
+                    .map(m => {
+                        // Use nickname if available for the user who sent the message
+                        const displayName = (m.user_id && nicknamesMap[m.user_id]) ? nicknamesMap[m.user_id] : m.sender_name
+                        return `${displayName}: ${m.content}`
+                    })
+                    .join('\n')
+
+                // Call the AI Service
+                const response = await aiService.generateResponse(formattedContext)
+
+                // Insert the real AI response
+                const { data, error: dbError } = await supabase
                     .from('messages')
                     .insert({
                         room_id: roomId,
-                        user_id: null,
+                        user_id: null, // Set to null to avoid FK constraint issues with profiles table
                         sender_name: BOT_CONFIG.name,
                         content: response,
-                        is_bot: false,
-                        is_system: true
+                        is_bot: true,
+                        is_system: false
                     })
                     .select()
                     .single()
 
-                if (error) {
-                    console.error('Failed to send Berto placeholder message to database:', error)
-                    // Fallback: Try sending as test system message
-                    await this.sendTestSystemMessage(roomId, response)
-                    return
+                if (dbError) {
+                    console.error('Database error inserting AI response:', dbError)
+                    throw new Error(`Database error: ${dbError.message}`)
                 }
 
-                console.log('Berto AI placeholder message sent:', data)
-            } catch (error) {
-                console.error('Berto AI error occurred:', error)
+                console.log('AI response sent successfully')
+            } catch (error: any) {
+                console.error('Final AI Trigger catch block error:', error.message || error)
+                if (error.stack) console.error('Stack trace:', error.stack)
                 // Fallback: Try sending as test system message
-                await this.sendTestSystemMessage(roomId, getRandomResponse())
+                await this.sendTestSystemMessage(roomId, `AI error: ${error.message || 'Unknown error'}`)
             }
-        }, 1500)
+        }, 500)
     },
 
     /**
@@ -166,13 +220,18 @@ export const chatService = {
             .from('messages')
             .select('*')
             .eq('room_id', roomId)
-            .order('created_at', { ascending: true })
+            .order('created_at', { ascending: false }) // Fetch the MOST RECENT messages first
             .limit(limit)
 
         if (error) throw error
 
+        // Sort them chronologically (ascending) for the UI and AI context
+        const sortedData = [...data].sort((a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        )
+
         // Use actual is_system value from database
-        return data.map(msg => ({
+        return sortedData.map(msg => ({
             ...msg,
             is_system: msg.is_system ?? false
         })) as Message[]
@@ -414,6 +473,162 @@ export const chatService = {
                     if (roomIds.includes(messageRoomId)) {
                         onMessage()
                     }
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    },
+
+    /**
+     * Subscribes to message deletions for multiple rooms.
+     * This is used by the sidebar to update when messages are cleared.
+     * @param roomIds - Array of room IDs to subscribe to
+     * @param onDelete - Callback when messages are deleted
+     * @returns unsubscribe function
+     */
+    subscribeToMessageDeletionsForRooms(roomIds: string[], onDelete: () => void) {
+        if (roomIds.length === 0) {
+            return () => { }
+        }
+
+        // Create a channel that listens to message deletions for all user's rooms
+        const channel = supabase
+            .channel(`user_messages_delete:${roomIds.join(',')}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'messages'
+                },
+                (payload) => {
+                    // For DELETE events, payload.old contains the deleted row
+                    // Try to get room_id from payload.old, but also trigger for all deletions
+                    // since we can't reliably filter in the subscription for deletions
+                    const messageRoomId = payload.old?.room_id
+
+                    // Always trigger the callback - the loadRooms will fetch fresh data
+                    // This ensures we update even if room_id is not in payload.old
+                    onDelete()
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    },
+
+    /**
+     * Subscribes to room member changes for a specific room.
+     * This is used by the MembersList to update in real-time when members are added/removed/roles changed.
+     * @param roomId - The room ID to subscribe to
+     * @param onMemberChange - Callback when members change
+     * @returns unsubscribe function
+     */
+    subscribeToRoomMembers(roomId: string, onMemberChange: () => void) {
+        const channel = supabase
+            .channel(`room_members:${roomId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'room_members',
+                    filter: `room_id=eq.${roomId}`
+                },
+                () => {
+                    onMemberChange()
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    },
+
+    /**
+     * Subscribes to room deletions for the current user.
+     * This is used by the sidebar to update when a room is deleted.
+     * @param userId - The current user's ID
+     * @param onRoomDeleted - Callback when a room is deleted
+     * @returns unsubscribe function
+     */
+    subscribeToRoomDeletions(userId: string, onRoomDeleted: () => void) {
+        const channel = supabase
+            .channel(`user_room_deletions:${userId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'rooms'
+                },
+                () => {
+                    onRoomDeleted()
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    },
+
+    /**
+     * Subscribes to room membership changes (join/leave) for the current user.
+     * This is used by the sidebar to update when user joins or leaves rooms.
+     * @param userId - The current user's ID
+     * @param onMembershipChange - Callback when membership changes
+     * @returns unsubscribe function
+     */
+    subscribeToRoomMemberships(userId: string, onMembershipChange: () => void) {
+        const channel = supabase
+            .channel(`user_room_memberships:${userId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'room_members',
+                    filter: `user_id=eq.${userId}`
+                },
+                () => {
+                    onMembershipChange()
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    },
+
+    /**
+     * Subscribes to nickname changes for a specific room.
+     * This is used by the MembersList to update in real-time when nicknames are changed.
+     * @param roomId - The room ID to subscribe to
+     * @param setterUserId - The ID of the user who set the nicknames (for filtering)
+     * @param onNicknameChange - Callback when nicknames change
+     * @returns unsubscribe function
+     */
+    subscribeToNicknames(roomId: string, setterUserId: string, onNicknameChange: () => void) {
+        const channel = supabase
+            .channel(`room_nicknames:${roomId}:${setterUserId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'room_member_nicknames',
+                    filter: `room_id=eq.${roomId}`
+                },
+                () => {
+                    onNicknameChange()
                 }
             )
             .subscribe()

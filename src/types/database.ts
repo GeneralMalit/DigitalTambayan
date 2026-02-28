@@ -62,6 +62,12 @@ export type RoomMemberWithUsername = {
     role: string;
     joined_at: string;
     is_admin: boolean;
+    nickname?: string;
+};
+
+export type RoomMemberNickname = {
+    target_user_id: string;
+    nickname: string;
 };
 
 export type Database = {

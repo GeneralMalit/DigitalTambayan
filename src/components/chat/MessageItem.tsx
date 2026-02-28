@@ -9,9 +9,10 @@ interface MessageItemProps {
     canDelete: boolean
     deletionThresholdMinutes: number
     onDelete?: (messageId: number | string) => void
+    nicknames?: Record<string, string>
 }
 
-export default function MessageItem({ message, isOwn, canDelete, deletionThresholdMinutes, onDelete }: MessageItemProps) {
+export default function MessageItem({ message, isOwn, canDelete, deletionThresholdMinutes, onDelete, nicknames }: MessageItemProps) {
     const [isHovered, setIsHovered] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -111,7 +112,7 @@ export default function MessageItem({ message, isOwn, canDelete, deletionThresho
 
             <div className={`flex items-baseline space-x-2 mb-1 px-1`}>
                 <span className={`text-[10px] font-medium tracking-wider font-heading ${isBot ? 'text-blue-400' : 'text-zinc-500'}`}>
-                    {message.sender_name} {isBot && '🤖'}
+                    {nicknames?.[message.user_id || ''] || message.sender_name} {isBot && '🤖'}
                 </span>
                 <span className="text-[10px] text-zinc-600 font-mono">
                     {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

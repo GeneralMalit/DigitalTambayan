@@ -73,26 +73,18 @@ export default function RoomSidebar({
             const userRooms = await chatService.getUserRooms(currentUserId)
             setRooms(userRooms)
 
-            // Load display names for all rooms in parallel using Promise.all
-            const namePromises = userRooms.map(room =>
-                chatService.getRoomDisplayName(room.id, currentUserId)
-                    .then(name => ({ id: room.id, name }))
-                    .catch(() => ({ id: room.id, name: room.name || UI_STRINGS.sidebar.unnamedGroup }))
-            )
-            const nameResults = await Promise.all(namePromises)
+            // Display names are now pre-calculated by the database function get_user_rooms
             const names: Record<string, string> = {}
-            for (const result of nameResults) {
-                names[result.id] = result.name
-            }
+            userRooms.forEach(room => {
+                names[room.id] = room.display_name || room.name || UI_STRINGS.sidebar.unnamedGroup
+            })
             setDisplayNames(names)
 
-            // Get the other user IDs from personal chats
+            // Get the other user IDs from personal chats for search filtering
             const personalChats = userRooms.filter(r => r.is_personal)
             const otherUserIds = new Set<string>()
 
-            // For each personal chat, we need to get the other user's ID
-            // We'll get it from the display name - the display name IS the other user's username
-            // Then we find the matching user from our users list
+            // Find all users to map usernames to IDs for filtering search results
             const allUsers = await adminService.getAllUsersForSearch()
             const usernameToId: Record<string, string> = {}
             allUsers.forEach(u => {
@@ -100,9 +92,11 @@ export default function RoomSidebar({
             })
 
             for (const chat of personalChats) {
-                const displayName = names[chat.id]?.toLowerCase()
-                if (displayName && usernameToId[displayName]) {
-                    otherUserIds.add(usernameToId[displayName])
+                // Since displayNames[chat.id] is now the other user's name (or nickname)
+                // in personal chats, we use it to exclude them from the search results
+                const otherUserName = names[chat.id]?.toLowerCase()
+                if (otherUserName && usernameToId[otherUserName]) {
+                    otherUserIds.add(usernameToId[otherUserName])
                 }
             }
             setPersonalChatUserIds(otherUserIds)
@@ -146,9 +140,13 @@ export default function RoomSidebar({
 
         // Subscribe to room changes
         const unsubscribeRooms = chatService.subscribeToUserRooms(currentUserId, loadRooms)
+        const unsubscribeRoomDeletions = chatService.subscribeToRoomDeletions(currentUserId, loadRooms)
+        const unsubscribeMemberships = chatService.subscribeToRoomMemberships(currentUserId, loadRooms)
 
         return () => {
             unsubscribeRooms()
+            unsubscribeRoomDeletions()
+            unsubscribeMemberships()
         }
     }, [currentUserId, loadRooms, loadUsers])
 
@@ -158,9 +156,11 @@ export default function RoomSidebar({
 
         const roomIds = rooms.map(room => room.id)
         const unsubscribeMessages = chatService.subscribeToMessagesForRooms(roomIds, loadRooms)
+        const unsubscribeDeletes = chatService.subscribeToMessageDeletionsForRooms(roomIds, loadRooms)
 
         return () => {
             unsubscribeMessages()
+            unsubscribeDeletes()
         }
     }, [rooms, loadRooms])
 
