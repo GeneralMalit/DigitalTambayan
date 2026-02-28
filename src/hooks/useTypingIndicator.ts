@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/utils/supabase/client'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 interface TypingUser {
@@ -24,7 +24,6 @@ export function useTypingIndicator(
     useEffect(() => {
         if (!roomId) return
 
-        const supabase = createClient()
         const channel = supabase.channel(`typing:${roomId}`, {
             config: {
                 broadcast: { self: false } // Don't receive own events
@@ -32,11 +31,11 @@ export function useTypingIndicator(
         })
 
         channel
-            .on('broadcast', { event: 'typing_start' }, ({ payload }) => {
-                setTypingUsers(prev => {
+            .on('broadcast', { event: 'typing_start' }, ({ payload }: any) => {
+                setTypingUsers((prev: any) => {
                     // Don't add if already in list
-                    if (prev.some(u => u.userId === payload.userId)) {
-                        return prev.map(u =>
+                    if (prev.some((u: any) => u.userId === payload.userId)) {
+                        return prev.map((u: any) =>
                             u.userId === payload.userId
                                 ? { ...u, timestamp: Date.now() }
                                 : u
@@ -49,10 +48,10 @@ export function useTypingIndicator(
                     }]
                 })
             })
-            .on('broadcast', { event: 'typing_stop' }, ({ payload }) => {
-                setTypingUsers(prev => prev.filter(u => u.userId !== payload.userId))
+            .on('broadcast', { event: 'typing_stop' }, ({ payload }: any) => {
+                setTypingUsers((prev: any) => prev.filter((u: any) => u.userId !== payload.userId))
             })
-            .subscribe((status) => {
+            .subscribe((status: any) => {
                 console.log('Typing indicator subscription status:', status)
             })
 

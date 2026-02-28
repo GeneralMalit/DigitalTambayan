@@ -1,7 +1,5 @@
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/utils/supabase/client'
 import { Profile, Room, ChatSettings, RoomMember, RoomMemberWithUsername, RoomWithMeta, RoomMemberNickname } from '@/types/database'
-
-const supabase = createClient()
 
 export const adminService = {
     /**
@@ -193,7 +191,7 @@ export const adminService = {
                     schema: 'public',
                     table: 'chat_settings'
                 },
-                (payload) => {
+                (payload: any) => {
                     if (payload.new) {
                         callback(payload.new as ChatSettings)
                     }

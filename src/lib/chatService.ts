@@ -1,8 +1,7 @@
-import { createClient } from '@/utils/supabase/client'
+import { supabase } from '@/utils/supabase/client'
 import { BOT_CONFIG } from '@/config/botManifest'
 import { Message, Room, RoomWithMeta } from '@/types/database'
 import { aiService } from '@/lib/aiService'
-const supabase = createClient()
 
 // Get random response from placeholder responses array
 const getRandomResponse = () => {
@@ -188,7 +187,7 @@ export const chatService = {
                     table: 'messages',
                     filter: `room_id=eq.${roomId}`
                 },
-                (payload) => {
+                (payload: any) => {
                     onInsert(payload.new as Message)
                 }
             )
@@ -203,13 +202,25 @@ export const chatService = {
                     table: 'messages',
                     filter: `room_id=eq.${roomId}`
                 },
-                (payload) => {
+                (payload: any) => {
                     onDelete(payload.old.id)
                 }
             )
         }
 
-        return channel.subscribe()
+        channel.subscribe((status: any) => {
+            if (status === 'SUBSCRIBED') {
+                console.log(`Successfully subscribed to messages for room: ${roomId}`)
+            }
+            if (status === 'CLOSED') {
+                console.warn(`Subscription for room ${roomId} was closed`)
+            }
+            if (status === 'CHANNEL_ERROR') {
+                console.error(`Subscription error for room ${roomId}`)
+            }
+        })
+
+        return channel
     },
 
     /**
@@ -438,7 +449,11 @@ export const chatService = {
                     onRoomChange()
                 }
             )
-            .subscribe()
+            .subscribe((status: any) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.error(`Room list subscription error for user: ${userId}`)
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)
@@ -457,9 +472,10 @@ export const chatService = {
             return () => { }
         }
 
-        // Create a channel that listens to messages for all user's rooms
+        // Avoid extremely long channel names (limit is 200 chars)
+        const channelId = roomIds.length > 5 ? `multi:${roomIds.length}` : roomIds.join(',')
         const channel = supabase
-            .channel(`user_messages:${roomIds.join(',')}`)
+            .channel(`user_messages:${channelId}`)
             .on(
                 'postgres_changes',
                 {
@@ -467,7 +483,7 @@ export const chatService = {
                     schema: 'public',
                     table: 'messages'
                 },
-                (payload) => {
+                (payload: any) => {
                     const messageRoomId = payload.new.room_id
                     // Only trigger if the message is for one of our rooms
                     if (roomIds.includes(messageRoomId)) {
@@ -475,7 +491,11 @@ export const chatService = {
                     }
                 }
             )
-            .subscribe()
+            .subscribe((status: any) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.error('Sidebar message subscription error')
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)
@@ -494,9 +514,9 @@ export const chatService = {
             return () => { }
         }
 
-        // Create a channel that listens to message deletions for all user's rooms
+        const channelId = roomIds.length > 5 ? `multi_del:${roomIds.length}` : roomIds.join(',')
         const channel = supabase
-            .channel(`user_messages_delete:${roomIds.join(',')}`)
+            .channel(`user_messages_delete:${channelId}`)
             .on(
                 'postgres_changes',
                 {
@@ -504,18 +524,15 @@ export const chatService = {
                     schema: 'public',
                     table: 'messages'
                 },
-                (payload) => {
-                    // For DELETE events, payload.old contains the deleted row
-                    // Try to get room_id from payload.old, but also trigger for all deletions
-                    // since we can't reliably filter in the subscription for deletions
-                    const messageRoomId = payload.old?.room_id
-
-                    // Always trigger the callback - the loadRooms will fetch fresh data
-                    // This ensures we update even if room_id is not in payload.old
+                (payload: any) => {
                     onDelete()
                 }
             )
-            .subscribe()
+            .subscribe((status: any) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.error('Sidebar deletion subscription error')
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)
@@ -544,7 +561,11 @@ export const chatService = {
                     onMemberChange()
                 }
             )
-            .subscribe()
+            .subscribe((status: any) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.error(`Member list subscription error for room: ${roomId}`)
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)
@@ -572,7 +593,11 @@ export const chatService = {
                     onRoomDeleted()
                 }
             )
-            .subscribe()
+            .subscribe((status: any) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.error(`Room deletion subscription error for user: ${userId}`)
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)
@@ -601,7 +626,11 @@ export const chatService = {
                     onMembershipChange()
                 }
             )
-            .subscribe()
+            .subscribe((status: any) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.error(`Room membership subscription error for user: ${userId}`)
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)
@@ -631,7 +660,11 @@ export const chatService = {
                     onNicknameChange()
                 }
             )
-            .subscribe()
+            .subscribe((status: any) => {
+                if (status === 'CHANNEL_ERROR') {
+                    console.error(`Nickname subscription error for room: ${roomId}`)
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)

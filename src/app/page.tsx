@@ -2,7 +2,7 @@
 
 import AuthForm from "@/components/auth/AuthForm";
 import Dashboard from "@/components/Dashboard";
-import { createClient } from "@/utils/supabase/client";
+import { supabase } from "@/utils/supabase/client";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -10,7 +10,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient()
 
     // check initial session
     const checkSession = async () => {
@@ -21,7 +20,7 @@ export default function Home() {
     checkSession()
 
     // listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setUser(session?.user ?? null)
     })
 
