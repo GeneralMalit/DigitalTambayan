@@ -1,9 +1,9 @@
 # PROJECT: Digital Tambayan (Master Context)
 
 ## 0. Current Session Status
-- **Current Goal:** Session 1.13: Nickname System & Berto AI Implementation
-- **Last Completed:** Personal chat display name now shows the other user's nickname when set
-- **Next Steps:** Test the nickname system and verify real-time updates work properly
+- **Current Goal:** Session 1.14: Realtime Stability Fixes
+- **Last Completed:** Consolidated Supabase client, robust realtime subscriptions, TypeScript build fixes
+- **Next Steps:** Deploy to Vercel and verify real-time responsiveness improvements
 
 ## 1. Core Identity & Manifest
 - **Bot Name:** Berto (configured in `BOT_NAME` constant - single source of truth)
@@ -118,6 +118,12 @@
   - [x] Added room deletion feature (owners can delete rooms)
   - [x] Updated personal chat display name to show other user's nickname
   - [x] Added multiple real-time subscriptions (room deletions, memberships, message deletions)
+- [x] Session 1.14: Realtime Stability Fixes
+  - [x] Consolidated Supabase client into singleton pattern to avoid multiple WebSocket connections
+  - [x] Enhanced realtime subscription management with status logging
+  - [x] Optimized channel names to stay within Supabase's 200-character limit
+  - [x] Improved message deletion handling for UI sync
+  - [x] Fixed TypeScript "implicitly any" errors for production build
 
 ## 7. Active Constraints
 - Auth: Custom Sign-up/Login forms required.
@@ -128,6 +134,7 @@
 ## 8. Key Files Reference
 - `src/config/botManifest.ts` - Bot configuration (BOT_NAME constant, trigger, placeholder responses, system prompt)
 - `src/config/uiStrings.ts` - Centralized UI strings manifest (includes nickname-related strings)
+- `src/utils/supabase/client.ts` - Singleton Supabase client for shared WebSocket connections
 - `src/hooks/useChat.ts` - Chat state management with real-time subscriptions
 - `src/hooks/useTypingIndicator.ts` - Typing indicator broadcast logic
 - `src/lib/chatService.ts` - Message CRUD, real-time subscriptions, room management, Berto bot integration logic
@@ -176,6 +183,15 @@
 - `src/components/chat/MessageItem.tsx` - Display nicknames instead of usernames in messages
 - `src/components/chat/RoomSidebar.tsx` - Added real-time subscriptions for room deletions and memberships
 - `src/config/botManifest.ts` - Refactored to use BOT_NAME constant (single source of truth)
+
+## 10.1. Files Modified in Session 1.14 (Realtime Stability Fixes)
+
+### Modified Files
+- `src/utils/supabase/client.ts` - Created singleton pattern for shared Supabase client
+- `src/lib/chatService.ts` - Enhanced realtime subscriptions with status logging, channel name optimization, improved deletion handling, explicit TypeScript types
+- `src/app/page.tsx` - Fixed "implicitly any" TypeScript errors
+- `src/hooks/useTypingIndicator.ts` - Fixed "implicitly any" TypeScript errors
+- `src/lib/adminService.ts` - Fixed "implicitly any" TypeScript errors
 
 ## 11. Architecture Overview
 
@@ -290,3 +306,37 @@
 
 ### Environment Variables
 - `NEXT_PUBLIC_GEMINI_API_KEY` - Required for AI responses
+
+## 15. Realtime Stability Fixes
+
+### Overview
+Implemented several key improvements to address intermittent real-time responsiveness issues observed on Vercel.
+
+### Changes Made
+
+#### 1. Supabase Client Consolidation
+Previously, each service and hook was creating its own instance of the Supabase client. This led to:
+
+- Multiple WebSocket connections (hitting Supabase limits)
+- Inconsistent authentication states across the application
+- Redundant overhead in serverless environments like Vercel
+
+**Fix:** Consolidated all client creation into a single singleton pattern in [`src/utils/supabase/client.ts`](src/utils/supabase/client.ts). All services now share the same connection.
+
+#### 2. Robust Realtime Subscription Management
+Enhanced all real-time subscriptions in [`chatService.ts`](src/lib/chatService.ts) to be more resilient:
+
+- **Status Monitoring:** Added logging for SUBSCRIBED, CLOSED, and CHANNEL_ERROR states to help debug connection issues
+- **Channel Name Optimization:** Optimized channel names to stay within Supabase's 200-character limit, especially for the multi-room message listener in the sidebar
+- **Improved Deletion Handling:** Refined the logic for receiving message deletions to ensure the UI stays in sync
+- **Explicit Serialization:** Added explicit types and handled `payload: any` correctly to satisfy strict TypeScript build requirements
+
+#### 3. Build Stabilization
+Fixed several "implicitly any" TypeScript errors in:
+
+- [`page.tsx`](src/app/page.tsx)
+- [`useTypingIndicator.ts`](src/hooks/useTypingIndicator.ts)
+- [`adminService.ts`](src/lib/adminService.ts)
+- [`chatService.ts`](src/lib/chatService.ts)
+
+The project now passes a full production build (`npm run build`).
