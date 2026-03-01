@@ -1,6 +1,7 @@
 export type Profile = {
     id: string;
     username: string;
+    avatar_url: string | null;
     is_admin: boolean;
     updated_at: string;
 };
@@ -11,6 +12,7 @@ export type Room = {
     name: string;
     owner_id: string | null;
     is_personal: boolean;
+    photo_url: string | null;
     display_name: string | null;
     created_at: string;
 };
@@ -20,6 +22,7 @@ export type RoomWithMeta = {
     slug: string;
     name: string;
     is_personal: boolean;
+    photo_url: string | null;
     display_name: string | null;
     role: string;
     last_message_at: string | null;
@@ -59,6 +62,7 @@ export type RoomMember = {
 export type RoomMemberWithUsername = {
     user_id: string;
     username: string;
+    avatar_url: string | null;
     role: string;
     joined_at: string;
     is_admin: boolean;

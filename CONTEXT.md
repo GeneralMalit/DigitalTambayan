@@ -1,9 +1,9 @@
 # PROJECT: Digital Tambayan (Master Context)
 
 ## 0. Current Session Status
-- **Current Goal:** Session 1.14: Realtime Stability Fixes
-- **Last Completed:** Consolidated Supabase client, robust realtime subscriptions, TypeScript build fixes
-- **Next Steps:** Deploy to Vercel and verify real-time responsiveness improvements
+- **Current Goal**: Completed Session 1.16 (Photo Sync Debugging). Ready for next feature.
+- **Last Completed:** Implemented circular photo cropping, Supabase storage integration, and real-time avatar updates. Added admin group deletion and personal chat labeling.
+- **Next Steps**: Inform user about SQL migration and verify real-time sync in production if needed.
 
 ## 1. Core Identity & Manifest
 - **Bot Name:** Berto (configured in `BOT_NAME` constant - single source of truth)
@@ -41,8 +41,8 @@
 - Users can set nicknames for other members - only visible to the setter
 
 ## 4. Current Database Schema
-- `profiles`: `id` (PK), `username` (unique), `email` (unique), `is_admin`, `updated_at`
-- `rooms`: `id` (PK), `slug` (unique), `name`, `owner_id`, `is_personal`, `display_name`, `created_at`
+- `profiles`: `id` (PK), `username` (unique), `email` (unique), `avatar_url` (nullable), `is_admin`, `updated_at`
+- `rooms`: `id` (PK), `slug` (unique), `name`, `photo_url` (nullable), `owner_id`, `is_personal`, `display_name`, `created_at`
 - `messages`: `id` (PK), `room_id` (FK), `user_id` (FK, nullable), `sender_name`, `content`, `is_bot`, `is_system`, `created_at`
 - `room_members`: `id` (PK), `room_id` (FK), `user_id` (FK), `role` ('owner', 'admin', 'member'), `joined_at`, `added_by`
 - `chat_settings`: `id` (PK), `enable_message_deletion`, `deletion_threshold_minutes`, `created_at`, `updated_at`
@@ -124,6 +124,15 @@
   - [x] Optimized channel names to stay within Supabase's 200-character limit
   - [x] Improved message deletion handling for UI sync
   - [x] Fixed TypeScript "implicitly any" errors for production build
+- [x] Session 1.15: Profile Photos & Admin Enhancements
+  - [x] Implemented `ImageCropModal` (custom canvas-based circular crop)
+  - [x] Created `storageService` for resizing (200x200px) and uploading to `avatars` bucket
+  - [x] Integrated profile photos in Dashboard (clickable username)
+  - [x] Integrated group photos in Members List and Sidebar
+  - [x] Added real-time avatar/photo updates across connected clients
+  - [x] Enhanced admin dashboard with "Personal Chat" labels and "Delete Group" functionality
+- [x] Session 1.16: Photo Sync Debugging
+  - [2026-03-01] **Session 1.16**: Debugged and fixed photo syncing issues. Corrected active Supabase project ID to `ceixttcyycswwgvsiczu`. Updated `get_user_rooms` and `get_room_members_with_nicknames` RPCs via MCP. Refactored subscriptions with unique channel names. Finalized real-time photo sync.
 
 ## 7. Active Constraints
 - Auth: Custom Sign-up/Login forms required.
@@ -137,8 +146,9 @@
 - `src/utils/supabase/client.ts` - Singleton Supabase client for shared WebSocket connections
 - `src/hooks/useChat.ts` - Chat state management with real-time subscriptions
 - `src/hooks/useTypingIndicator.ts` - Typing indicator broadcast logic
-- `src/lib/chatService.ts` - Message CRUD, real-time subscriptions, room management, Berto bot integration logic
-- `src/lib/adminService.ts` - Admin operations, room member management, permission checks, nickname management
+- `src/lib/chatService.ts` - Message CRUD, real-time subscriptions, room management, Berto bot integration logic, real-time photo/avatar subscriptions
+- `src/lib/adminService.ts` - Admin operations, room member management, permission checks, nickname management, group deletion
+- `src/lib/storageService.ts` - (NEW) Storage service for photo uploads and image processing
 - `src/lib/aiService.ts` - (NEW) AI service for Berto bot integration
 - `src/components/Dashboard.tsx` - Main dashboard with sidebar layout, chat, settings modal, nickname handling
 - `src/components/chat/RoomSidebar.tsx` - Left sidebar showing all user's rooms with real-time updates

@@ -62,7 +62,9 @@ export function useChat(roomId: string | undefined) {
                     // DELETE callback
                     (deletedId) => {
                         if (mounted) {
-                            setMessages((prev) => prev.filter(msg => msg.id !== deletedId))
+                            // Coerce both to string for comparison since temp messages use string IDs
+                            // and Supabase sends numeric IDs
+                            setMessages((prev) => prev.filter(msg => String(msg.id) !== String(deletedId)))
                         }
                     }
                 )

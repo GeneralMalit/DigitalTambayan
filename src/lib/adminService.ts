@@ -98,6 +98,22 @@ export const adminService = {
     },
 
     /**
+     * Deletes a group chat as an admin (no owner check, clears messages first).
+     */
+    async deleteGroupChatAsAdmin(roomId: string): Promise<void> {
+        // Clear all messages first
+        await this.deleteAllMessages(roomId)
+
+        // Delete members
+        await supabase.from('room_members').delete().eq('room_id', roomId)
+
+        // Delete the room
+        const { error } = await supabase.from('rooms').delete().eq('id', roomId)
+        if (error) throw error
+    },
+
+
+    /**
      * Fetches all user profiles from the database.
      */
     async getAllUsers(): Promise<Profile[]> {

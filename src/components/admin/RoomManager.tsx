@@ -19,6 +19,7 @@ export default function RoomManager({ currentUserId, onRefresh, onMessagesCleare
     const [newRoomName, setNewRoomName] = useState('')
     const [creating, setCreating] = useState(false)
     const [deleting, setDeleting] = useState<string | null>(null)
+    const [deletingGroup, setDeletingGroup] = useState<string | null>(null)
 
     useEffect(() => {
         loadRooms()
@@ -69,6 +70,22 @@ export default function RoomManager({ currentUserId, onRefresh, onMessagesCleare
             setError(err.message || 'Failed to delete messages')
         } finally {
             setDeleting(null)
+        }
+    }
+
+    const handleDeleteGroup = async (room: Room) => {
+        if (!confirm(UI_STRINGS.admin.deleteGroupConfirm(room.name))) return
+
+        setDeletingGroup(room.id)
+        setError(null)
+        try {
+            await adminService.deleteGroupChatAsAdmin(room.id)
+            await loadRooms()
+            onRefresh?.()
+        } catch (err: any) {
+            setError(err.message || 'Failed to delete group')
+        } finally {
+            setDeletingGroup(null)
         }
     }
 
@@ -136,16 +153,34 @@ export default function RoomManager({ currentUserId, onRefresh, onMessagesCleare
                                 className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5"
                             >
                                 <div className="flex flex-col">
-                                    <span className="text-white font-medium">{room.name}</span>
-                                    <span className="text-zinc-500 text-xs">/{room.slug}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-white font-medium">{room.name || (room.is_personal ? UI_STRINGS.admin.personalChatLabel : UI_STRINGS.sidebar.unnamedGroup)}</span>
+                                        {room.is_personal && (
+                                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                                {UI_STRINGS.admin.personalChatLabel}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-zinc-500 text-xs">/{room.slug || 'dm'}</span>
                                 </div>
-                                <button
-                                    onClick={() => handleDeleteMessages(room)}
-                                    disabled={deleting === room.id}
-                                    className="text-xs px-3 py-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors disabled:opacity-50"
-                                >
-                                    {deleting === room.id ? UI_STRINGS.admin.deleting : UI_STRINGS.admin.clearMessages}
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => handleDeleteMessages(room)}
+                                        disabled={deleting === room.id || deletingGroup === room.id}
+                                        className="text-xs px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-white/5 transition-colors disabled:opacity-50"
+                                    >
+                                        {deleting === room.id ? UI_STRINGS.admin.deleting : UI_STRINGS.admin.clearMessages}
+                                    </button>
+                                    {!room.slug && !room.is_personal && (
+                                        <button
+                                            onClick={() => handleDeleteGroup(room)}
+                                            disabled={deleting === room.id || deletingGroup === room.id}
+                                            className="text-xs px-3 py-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors disabled:opacity-50"
+                                        >
+                                            {deletingGroup === room.id ? UI_STRINGS.admin.deleting : UI_STRINGS.admin.deleteGroup}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))
                     )}

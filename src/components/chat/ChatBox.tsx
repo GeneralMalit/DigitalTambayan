@@ -12,9 +12,10 @@ interface ChatBoxProps {
     deletionThresholdMinutes: number
     onMessageDeleted?: (messageId: number | string) => void
     nicknames?: Record<string, string>
+    avatars?: Record<string, string>
 }
 
-export default function ChatBox({ messages, currentUserId, roomId, enableMessageDeletion, deletionThresholdMinutes, onMessageDeleted, nicknames }: ChatBoxProps) {
+export default function ChatBox({ messages, currentUserId, roomId, enableMessageDeletion, deletionThresholdMinutes, onMessageDeleted, nicknames, avatars }: ChatBoxProps) {
     const scrollRef = useRef<HTMLDivElement>(null)
 
     // Auto-scroll to bottom - use useLayoutEffect for synchronous execution
@@ -71,6 +72,7 @@ export default function ChatBox({ messages, currentUserId, roomId, enableMessage
                         deletionThresholdMinutes={deletionThresholdMinutes}
                         onDelete={onMessageDeleted}
                         nicknames={nicknames}
+                        avatarUrl={msg.user_id ? avatars?.[msg.user_id] : undefined}
                     />
                 ))
             )}

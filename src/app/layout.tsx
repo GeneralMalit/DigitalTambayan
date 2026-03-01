@@ -35,7 +35,7 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="shrink-0 w-full py-2.5 text-center text-[10px] text-zinc-600 bg-zinc-950 border-t border-white/5">
-            © 2026 Digital Tambayan by General Malit - development (beta 0.12.0)
+            © 2026 Digital Tambayan by General Malit - (1.0.0)
           </footer>
         </div>
       </body>

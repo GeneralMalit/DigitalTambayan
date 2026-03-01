@@ -33,13 +33,16 @@ export const UI_STRINGS = {
         users: "Users",
         settings: "Settings",
         clearMessages: "Clear Messages",
+        deleteGroup: "Delete Group",
         deleting: "Deleting...",
-        deleteRoomConfirm: (name: string) => `Delete all messages in "${name}"?`,
+        deleteRoomConfirm: (name: string) => `Clear all messages in "${name}"?`,
+        deleteGroupConfirm: (name: string) => `PERMANENTLY DELETE group "${name}"? This will clear all messages and remove the room for everyone.`,
         addNewRoom: "Add New Room",
         createRoom: "Create Room",
         creating: "Creating...",
         allRooms: (count: number) => `All Rooms (${count})`,
         noRooms: "No rooms found",
+        personalChatLabel: "Personal Chat",
     },
     common: {
         loading: "Loading...",
@@ -48,6 +51,8 @@ export const UI_STRINGS = {
         save: "Save",
         error: "Error",
         success: "Success",
+        upload: "Upload",
+        changePhoto: "Change Photo",
     },
     nicknames: {
         editNicknames: "Edit Nicknames",
@@ -60,5 +65,12 @@ export const UI_STRINGS = {
         placeholder: "Enter nickname...",
         panelTitle: "Nicknames",
         editNicknameFor: (username: string) => `Edit nickname for ${username}`,
+    },
+    photos: {
+        changeProfilePhoto: "Change Profile Photo",
+        changeGroupPhoto: "Change Group Photo",
+        uploading: "Uploading...",
+        cropTitle: "Crop Layout",
+        cropInstructions: "Drag to reposition, use slider to zoom. Final photo will be a 200x200 square.",
     }
 };

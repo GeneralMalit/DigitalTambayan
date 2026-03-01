@@ -4,6 +4,8 @@ import { RoomMemberWithUsername, Profile, Room, RoomMemberNickname } from '@/typ
 import { adminService } from '@/lib/adminService'
 import { chatService } from '@/lib/chatService'
 import { UI_STRINGS } from '@/config/uiStrings'
+import ImageCropModal from './ImageCropModal'
+import { storageService } from '@/lib/storageService'
 import { useEffect, useState, useCallback } from 'react'
 import UserProfileModal from './UserProfileModal'
 
@@ -34,6 +36,11 @@ export default function MembersList({
     const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false)
     const [availableUsers, setAvailableUsers] = useState<Profile[]>([])
+
+    // Photo upload state
+    const [isCropModalOpen, setIsCropModalOpen] = useState(false)
+    const [pendingImage, setPendingImage] = useState<File | null>(null)
+    const [uploadingPhoto, setUploadingPhoto] = useState(false)
     const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
     const [actionLoading, setActionLoading] = useState(false)
 
@@ -504,8 +511,16 @@ export default function MembersList({
                                             className="flex items-center gap-3 p-3 rounded-lg bg-white/5"
                                         >
                                             {/* Avatar */}
-                                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
-                                                {member.username?.charAt(0).toUpperCase() || '?'}
+                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white text-sm font-medium shrink-0 ring-1 ring-white/10">
+                                                {member.avatar_url ? (
+                                                    <img
+                                                        src={member.avatar_url}
+                                                        alt={member.username}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    member.username.charAt(0).toUpperCase()
+                                                )}
                                             </div>
 
                                             {/* Name and Nickname */}
@@ -756,8 +771,59 @@ export default function MembersList({
                     )}
                 </div>
 
+                {/* Group Photo Section (Group chats only) */}
+                {!isPersonalChat && room && (
+                    <div className="p-4 border-b border-white/10 space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="relative">
+                                {room.photo_url ? (
+                                    <img
+                                        src={room.photo_url}
+                                        alt={room.name}
+                                        className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/10"
+                                    />
+                                ) : (
+                                    <div className="w-16 h-16 rounded-2xl bg-purple-600 flex items-center justify-center text-white ring-2 ring-white/10">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3.005 3.005 0 013.75-2.906z" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 space-y-1">
+                                <h4 className="text-sm font-semibold text-white">Group Photo</h4>
+                                <p className="text-xs text-zinc-500">Standardize your group identity</p>
+                            </div>
+                            {isAdmin && (
+                                <button
+                                    onClick={() => {
+                                        const input = document.createElement('input')
+                                        input.type = 'file'
+                                        input.accept = 'image/*'
+                                        input.onchange = (e) => {
+                                            const file = (e.target as HTMLInputElement).files?.[0]
+                                            if (file) {
+                                                setPendingImage(file)
+                                                setIsCropModalOpen(true)
+                                            }
+                                        }
+                                        input.click()
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors border border-white/5"
+                                    title="Change group photo"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                                    </svg>
+
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Members List */}
-                <div className="flex-1 overflow-y-auto p-2">
+                <div className="flex-1 overflow-y-auto">
                     {loading ? (
                         <div className="flex items-center justify-center py-8">
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
@@ -784,14 +850,23 @@ export default function MembersList({
                                                     setSelectedUser({
                                                         id: member.user_id,
                                                         username: member.username,
+                                                        avatar_url: member.avatar_url || null,
                                                         is_admin: member.is_admin,
                                                         updated_at: member.joined_at
                                                     })
                                                 }
                                             }}
-                                            className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium shrink-0 hover:ring-2 hover:ring-blue-400 transition-all"
+                                            className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium shrink-0 hover:ring-2 hover:ring-blue-400 transition-all overflow-hidden"
                                         >
-                                            {member.username?.charAt(0).toUpperCase() || '?'}
+                                            {member.avatar_url ? (
+                                                <img
+                                                    src={member.avatar_url}
+                                                    alt={member.username}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                member.username?.charAt(0).toUpperCase() || '?'
+                                            )}
                                         </button>
 
                                         {/* Name and Role */}
@@ -913,61 +988,93 @@ export default function MembersList({
                         {members.length} {members.length === 1 ? 'member' : 'members'}
                     </p>
                 </div>
-            </div>
+            </div >
 
             {/* Add Member Modal */}
-            {isAddMemberOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-                    <div className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl">
-                        <div className="flex items-center justify-between p-4 border-b border-white/10">
-                            <h3 className="text-lg font-semibold text-white">Add Member</h3>
-                            <button
-                                onClick={() => setIsAddMemberOpen(false)}
-                                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
+            {
+                isAddMemberOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
+                        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl">
+                            <div className="flex items-center justify-between p-4 border-b border-white/10">
+                                <h3 className="text-lg font-semibold text-white">Add Member</h3>
+                                <button
+                                    onClick={() => setIsAddMemberOpen(false)}
+                                    className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
 
-                        <div className="max-h-80 overflow-y-auto p-2">
-                            {availableUsers.length === 0 ? (
-                                <div className="p-4 text-center text-zinc-500 text-sm">
-                                    No users available to add
-                                </div>
-                            ) : (
-                                availableUsers.map((user) => (
-                                    <button
-                                        key={user.id}
-                                        onClick={() => handleAddMember(user.id)}
-                                        disabled={actionLoading}
-                                        className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
-                                    >
-                                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
-                                            {user.username.charAt(0).toUpperCase()}
-                                        </div>
-                                        <span className="text-sm text-white">{user.username}</span>
-                                    </button>
-                                ))
-                            )}
+                            <div className="max-h-80 overflow-y-auto p-2">
+                                {availableUsers.length === 0 ? (
+                                    <div className="p-4 text-center text-zinc-500 text-sm">
+                                        No users available to add
+                                    </div>
+                                ) : (
+                                    availableUsers.map((user) => (
+                                        <button
+                                            key={user.id}
+                                            onClick={() => handleAddMember(user.id)}
+                                            disabled={actionLoading}
+                                            className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
+                                                {user.username.charAt(0).toUpperCase()}
+                                            </div>
+                                            <span className="text-sm text-white">{user.username}</span>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* User Profile Modal */}
-            {selectedUser && (
-                <UserProfileModal
-                    user={selectedUser}
-                    currentUserId={currentUserId}
-                    onClose={() => setSelectedUser(null)}
-                    onChatCreated={() => {
-                        setSelectedUser(null)
-                        onClose()
-                    }}
-                />
-            )}
+            {
+                selectedUser && (
+                    <UserProfileModal
+                        user={selectedUser}
+                        currentUserId={currentUserId}
+                        onClose={() => setSelectedUser(null)}
+                        onChatCreated={() => {
+                            setSelectedUser(null)
+                            onClose()
+                        }}
+                    />
+                )
+            }
+            {/* Image Crop Modal */}
+            {
+                isCropModalOpen && pendingImage && room && (
+                    <ImageCropModal
+                        imageFile={pendingImage}
+                        onCrop={async (blob) => {
+                            try {
+                                setUploadingPhoto(true)
+                                await storageService.uploadGroupPhoto(room.id, blob)
+                                // Call the refresh callback if it exists (usually passed from parent)
+                                if (onMemberChange) onMemberChange()
+                                setIsCropModalOpen(false)
+                                setPendingImage(null)
+                            } catch (err: any) {
+                                console.error('Failed to upload group photo:', err)
+                                alert('Failed to upload photo: ' + err.message)
+                            } finally {
+                                setUploadingPhoto(false)
+                            }
+                        }}
+                        onClose={() => {
+                            setIsCropModalOpen(false)
+                            setPendingImage(null)
+                        }}
+                    />
+                )
+            }
         </>
     )
 }
+

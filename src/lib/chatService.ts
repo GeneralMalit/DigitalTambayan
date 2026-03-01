@@ -581,7 +581,7 @@ export const chatService = {
      */
     subscribeToRoomDeletions(userId: string, onRoomDeleted: () => void) {
         const channel = supabase
-            .channel(`user_room_deletions:${userId}`)
+            .channel(`room_deletions_${userId}`)
             .on(
                 'postgres_changes',
                 {
@@ -593,11 +593,69 @@ export const chatService = {
                     onRoomDeleted()
                 }
             )
-            .subscribe((status: any) => {
-                if (status === 'CHANNEL_ERROR') {
-                    console.error(`Room deletion subscription error for user: ${userId}`)
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    },
+
+    /**
+     * Subscribes to profile changes (avatars) for specific users.
+     * @param userIds - Array of user IDs
+     * @param onChange - Callback when a profile changes
+     */
+    subscribeToProfileChanges(userIds: string[], onChange: () => void) {
+        if (userIds.length === 0) return () => { }
+
+        // Create a unique channel name based on user IDs to avoid collisions
+        // Use Date.now() suffix to ensure uniqueness across components
+        const userHash = userIds.length > 3 ? `batch:${userIds.length}` : userIds.join('-')
+        const channel = supabase
+            .channel(`profile_updates:${userHash}:${Date.now()}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'profiles',
+                },
+                (payload: any) => {
+                    if (userIds.includes(payload.new.id)) {
+                        onChange()
+                    }
                 }
-            })
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    },
+
+    /**
+     * Subscribes to room changes (photo_url) for specific rooms.
+     */
+    subscribeToRoomUpdates(roomIds: string[], onChange: () => void) {
+        if (roomIds.length === 0) return () => { }
+
+        const roomHash = roomIds.length > 3 ? `batch:${roomIds.length}` : roomIds.join('-')
+        const channel = supabase
+            .channel(`room_updates:${roomHash}:${Date.now()}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'rooms',
+                },
+                (payload: any) => {
+                    if (roomIds.includes(payload.new.id)) {
+                        onChange()
+                    }
+                }
+            )
+            .subscribe()
 
         return () => {
             supabase.removeChannel(channel)

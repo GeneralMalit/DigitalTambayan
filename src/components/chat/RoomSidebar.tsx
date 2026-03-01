@@ -3,6 +3,7 @@
 import { RoomWithMeta, Profile } from '@/types/database'
 import { chatService } from '@/lib/chatService'
 import { adminService } from '@/lib/adminService'
+import { supabase } from '@/utils/supabase/client'
 import { useEffect, useState, useCallback } from 'react'
 import CreateGroupModal from './CreateGroupModal'
 import { UI_STRINGS } from '@/config/uiStrings'
@@ -150,6 +151,58 @@ export default function RoomSidebar({
         }
     }, [currentUserId, loadRooms, loadUsers])
 
+    // Subscribe to room updates (for group photo changes) and profile updates (for DM avatars)
+    useEffect(() => {
+        if (rooms.length === 0) return
+
+        const roomIds = rooms.map(r => r.id)
+
+        // Use sidebar-specific channel names to avoid collision with Dashboard subscriptions
+        const roomHash = roomIds.length > 3 ? `sidebar_batch:${roomIds.length}` : `sidebar_${roomIds.join('-')}`
+        const roomChannel = supabase
+            .channel(`sidebar_room_updates:${roomHash}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'rooms',
+                },
+                (payload: any) => {
+                    if (roomIds.includes(payload.new.id)) {
+                        loadRooms()
+                    }
+                }
+            )
+            .subscribe()
+
+        // Subscribe to ALL profile updates so that when a DM partner changes their avatar,
+        // the sidebar reloads and shows the new photo (via the get_user_rooms RPC)
+        const hasPersonalChats = rooms.some(r => r.is_personal)
+        let profileChannel: any = null
+        if (hasPersonalChats) {
+            profileChannel = supabase
+                .channel(`sidebar_profile_updates:${currentUserId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'profiles',
+                    },
+                    () => {
+                        loadRooms()
+                    }
+                )
+                .subscribe()
+        }
+
+        return () => {
+            supabase.removeChannel(roomChannel)
+            if (profileChannel) supabase.removeChannel(profileChannel)
+        }
+    }, [rooms.length, loadRooms, currentUserId])
+
     // Subscribe to messages for all rooms to update last message info
     useEffect(() => {
         if (rooms.length === 0) return
@@ -283,48 +336,61 @@ export default function RoomSidebar({
                                     <div className="px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                                         {UI_STRINGS.sidebar.directMessages}
                                     </div>
-                                    {personalChats.map((room) => (
-                                        <button
-                                            key={room.id}
-                                            onClick={() => handleRoomClick(room)}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${currentRoomId === room.id ? 'bg-white/10' : ''
-                                                }`}
-                                        >
-                                            {/* Avatar */}
-                                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium shrink-0">
-                                                {(displayNames[room.id] || '?').charAt(0).toUpperCase()}
-                                            </div>
-
-                                            {/* Room Info */}
-                                            <div className="flex-1 min-w-0 text-left">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <p className={`text-sm font-medium text-white truncate ${isRoomUnread(room) ? 'font-bold' : ''}`}>
-                                                        {displayNames[room.id] || UI_STRINGS.common.loading}
-                                                    </p>
-                                                    <div className="flex items-center gap-1">
-                                                        {isRoomUnread(room) && (
-                                                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                                        )}
-                                                        {room.last_message_at && (
-                                                            <span className="text-[10px] text-zinc-500 whitespace-nowrap">
-                                                                {formatLastMessage(room.last_message_at)}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <p className={`text-xs text-zinc-500 truncate mt-0.5 ${isRoomUnread(room) ? 'font-bold text-zinc-300' : ''}`}>
-                                                    {room.last_message_content ? (
-                                                        <>
-                                                            <span className="text-zinc-400">{room.last_message_sender}: </span>
-                                                            {room.last_message_content}
-                                                        </>
+                                    {personalChats.map((room) => {
+                                        const isUnread = isRoomUnread(room);
+                                        return (
+                                            <button
+                                                key={room.id}
+                                                onClick={() => handleRoomClick(room)}
+                                                className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${currentRoomId === room.id ? 'bg-white/10' : ''
+                                                    }`}
+                                            >
+                                                {/* Avatar */}
+                                                <div className="relative">
+                                                    {room.photo_url ? (
+                                                        <img
+                                                            src={room.photo_url}
+                                                            alt={displayNames[room.id] || room.name || ''}
+                                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-white/5"
+                                                        />
                                                     ) : (
-                                                        UI_STRINGS.sidebar.noMessagesPreview
+                                                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium shrink-0 ring-2 ring-white/5">
+                                                            {(displayNames[room.id] || '?').charAt(0).toUpperCase()}
+                                                        </div>
                                                     )}
-                                                </p>
-                                            </div>
-                                        </button>
-                                    ))}
+                                                    {isUnread && (
+                                                        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-blue-500 rounded-full border-2 border-zinc-950" />
+                                                    )}
+                                                </div>
+
+                                                {/* Room Info */}
+                                                <div className="flex-1 min-w-0 text-left">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <p className={`text-sm font-medium text-white truncate ${isUnread ? 'font-bold' : ''}`}>
+                                                            {displayNames[room.id] || UI_STRINGS.common.loading}
+                                                        </p>
+                                                        <div className="flex items-center gap-1">
+                                                            {room.last_message_at && (
+                                                                <span className="text-[10px] text-zinc-500 whitespace-nowrap">
+                                                                    {formatLastMessage(room.last_message_at)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <p className={`text-xs text-zinc-500 truncate mt-0.5 ${isUnread ? 'font-bold text-zinc-300' : ''}`}>
+                                                        {room.last_message_content ? (
+                                                            <>
+                                                                <span className="text-zinc-400">{room.last_message_sender}: </span>
+                                                                {room.last_message_content}
+                                                            </>
+                                                        ) : (
+                                                            UI_STRINGS.sidebar.noMessagesPreview
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             )}
 
@@ -334,50 +400,63 @@ export default function RoomSidebar({
                                     <div className="px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                                         {UI_STRINGS.sidebar.groupChats}
                                     </div>
-                                    {groupChats.map((room) => (
-                                        <button
-                                            key={room.id}
-                                            onClick={() => handleRoomClick(room)}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${currentRoomId === room.id ? 'bg-white/10' : ''
-                                                }`}
-                                        >
-                                            {/* Avatar */}
-                                            <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center text-white font-medium shrink-0">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                                                </svg>
-                                            </div>
-
-                                            {/* Room Info */}
-                                            <div className="flex-1 min-w-0 text-left">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <p className={`text-sm font-medium text-white truncate ${isRoomUnread(room) ? 'font-bold' : ''}`}>
-                                                        {displayNames[room.id] || room.name || UI_STRINGS.sidebar.unnamedGroup}
-                                                    </p>
-                                                    <div className="flex items-center gap-1">
-                                                        {isRoomUnread(room) && (
-                                                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                                        )}
-                                                        {room.last_message_at && (
-                                                            <span className="text-[10px] text-zinc-500 whitespace-nowrap">
-                                                                {formatLastMessage(room.last_message_at)}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <p className={`text-xs text-zinc-500 truncate mt-0.5 ${isRoomUnread(room) ? 'font-bold text-zinc-300' : ''}`}>
-                                                    {room.last_message_content ? (
-                                                        <>
-                                                            <span className="text-zinc-400">{room.last_message_sender}: </span>
-                                                            {room.last_message_content}
-                                                        </>
+                                    {groupChats.map((room) => {
+                                        const isUnread = isRoomUnread(room);
+                                        return (
+                                            <button
+                                                key={room.id}
+                                                onClick={() => handleRoomClick(room)}
+                                                className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${currentRoomId === room.id ? 'bg-white/10' : ''
+                                                    }`}
+                                            >
+                                                {/* Avatar */}
+                                                <div className="relative">
+                                                    {room.photo_url ? (
+                                                        <img
+                                                            src={room.photo_url}
+                                                            alt={room.name}
+                                                            className="w-10 h-10 rounded-lg object-cover ring-2 ring-white/5"
+                                                        />
                                                     ) : (
-                                                        UI_STRINGS.sidebar.noMessagesPreview
+                                                        <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center text-white font-medium shrink-0 ring-2 ring-white/5">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3.005 3.005 0 013.75-2.906z" />
+                                                            </svg>
+                                                        </div>
                                                     )}
-                                                </p>
-                                            </div>
-                                        </button>
-                                    ))}
+                                                    {isUnread && (
+                                                        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-blue-500 rounded-full border-2 border-zinc-950" />
+                                                    )}
+                                                </div>
+
+                                                {/* Room Info */}
+                                                <div className="flex-1 min-w-0 text-left">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <p className={`text-sm font-medium text-white truncate ${isUnread ? 'font-bold' : ''}`}>
+                                                            {displayNames[room.id] || room.name || UI_STRINGS.sidebar.unnamedGroup}
+                                                        </p>
+                                                        <div className="flex items-center gap-1">
+                                                            {room.last_message_at && (
+                                                                <span className="text-[10px] text-zinc-500 whitespace-nowrap">
+                                                                    {formatLastMessage(room.last_message_at)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <p className={`text-xs text-zinc-500 truncate mt-0.5 ${isUnread ? 'font-bold text-zinc-300' : ''}`}>
+                                                        {room.last_message_content ? (
+                                                            <>
+                                                                <span className="text-zinc-400">{room.last_message_sender}: </span>
+                                                                {room.last_message_content}
+                                                            </>
+                                                        ) : (
+                                                            UI_STRINGS.sidebar.noMessagesPreview
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             )}
 
@@ -393,7 +472,7 @@ export default function RoomSidebar({
                 </div>
 
                 {/* Create Group Button */}
-                <div className="px-8 py-8">
+                <div className="p-4 border-t border-white/10">
                     <button
                         onClick={() => setIsCreateGroupOpen(true)}
                         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"
