@@ -1,4 +1,4 @@
-# Digital Tambayan 💬
+# Digital Tambayan 
 
 Digital Tambayan is a modern, real-time chat platform designed for casual and community-focused interactions. Built with a robust technical stack and a focus on visual excellence, it bridges the gap between traditional chat apps and community "tambayans" (hangouts).
 
