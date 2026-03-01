@@ -4,35 +4,35 @@ Digital Tambayan is a modern, real-time chat platform designed for casual and co
 
 ---
 
-## 🚀 Key Features
+##  Key Features
 
-### 📨 Real-Time Communication
+###  Real-Time Communication
 - **Instant Messaging**: Powered by Supabase Realtime for sub-second latency.
 - **Typing Indicators**: Visual feedback when someone is composing a message.
 - **System Events**: Automated notifications for room joins, role changes, and name updates.
 
-### 👥 Room Management
+###  Room Management
 - **Personal Chats (DMs)**: Auto-created direct messaging with equal permissions for both users.
 - **Group Chats**: Scalable group conversations with a sophisticated role system (Owner, Admin, Member).
 - **Role-Based Permissions**: Granular controls for adding/removing members, promoting admins, and room deletion.
 
-### 🎭 Identity & Personalization
+###  Identity & Personalization
 - **Private Nicknames**: A unique system where users can set private nicknames for others. These nicknames are room-specific and visible only to the user who set them—even the AI bot respects these nicknames!
 - **Rich User Profiles**: Customizable profile and group photos with an integrated circular cropping tool.
 - **Real-Time Avatars**: Profile updates sync instantly across all active clients.
 
-### 🤖 Meet Berto (AI Assistant)
+###  Meet Berto (AI Assistant)
 - **Persona-Driven AI**: Berto is an observant friend with a "Taglish Tambay" persona.
 - **Context-Aware**: Uses recent chat history and your private nicknames to provide relevant and personalized responses.
 - **API Integrated**: Powered by Google's Gemini API.
 
-### 🛠 Admin Capabilities
+###  Admin Capabilities
 - **Comprehensive Dashboard**: Dedicated tools for website admins to manage rooms, users, and global chat settings.
 - **Moderation Tools**: Ability to clear chat histories and manage community growth.
 
 ---
 
-## 🛠 Technical Stack
+##  Technical Stack
 
 - **Core**: [Next.js](https://nextjs.org/) (App Router, React 19)
 - **Database & Auth**: [Supabase](https://supabase.com/) (PostgreSQL)
@@ -44,7 +44,7 @@ Digital Tambayan is a modern, real-time chat platform designed for casual and co
 
 ---
 
-## 🏗 Modular Architecture
+##  Modular Architecture
 
 The project follows a clean, service-oriented architecture:
 
@@ -55,7 +55,7 @@ The project follows a clean, service-oriented architecture:
 
 ---
 
-## 🔧 Getting Started
+##  Getting Started
 
 ### Prerequisites
 - Node.js (v18+)
@@ -91,7 +91,7 @@ The project follows a clean, service-oriented architecture:
 
 ---
 
-## ⚖️ License
+##  License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
