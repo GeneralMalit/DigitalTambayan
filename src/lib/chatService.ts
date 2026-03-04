@@ -107,7 +107,7 @@ export const chatService = {
                     .join('\n')
 
                 // Call the AI Service
-                const response = await aiService.generateResponse(formattedContext)
+                const response = await aiService.generateResponse(roomId, formattedContext)
 
                 // Insert the real AI response
                 const { data, error: dbError } = await supabase
@@ -481,7 +481,8 @@ export const chatService = {
                 {
                     event: 'INSERT',
                     schema: 'public',
-                    table: 'messages'
+                    table: 'messages',
+                    filter: `room_id=in.(${roomIds.join(',')})`
                 },
                 (payload: any) => {
                     const messageRoomId = payload.new.room_id
@@ -522,7 +523,8 @@ export const chatService = {
                 {
                     event: 'DELETE',
                     schema: 'public',
-                    table: 'messages'
+                    table: 'messages',
+                    filter: `room_id=in.(${roomIds.join(',')})`
                 },
                 (payload: any) => {
                     onDelete()

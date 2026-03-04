@@ -24,25 +24,25 @@ export const authService = {
      * Signs in an existing user with email/username and password.
      */
     async signIn(identifier: string, password: string) {
-        let email = identifier
+        const response = await fetch('/api/auth/sign-in', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                identifier,
+                password
+            })
+        })
 
-        // Basic check: if identifier doesn't contain '@', treat it as a username
-        if (!identifier.includes('@')) {
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('email')
-                .eq('username', identifier)
-                .single()
-
-            if (profileError || !profile) {
-                throw new Error('Username not found')
-            }
-            email = profile.email
+        const payload = await response.json().catch(() => null)
+        if (!response.ok || !payload?.session) {
+            throw new Error(payload?.error || 'Invalid login credentials')
         }
 
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
+        const { data, error } = await supabase.auth.setSession({
+            access_token: payload.session.access_token,
+            refresh_token: payload.session.refresh_token
         })
 
         if (error) throw error
@@ -75,7 +75,7 @@ export const authService = {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('*')
+            .select('id, username, avatar_url, is_admin, updated_at')
             .eq('id', session.user.id)
             .single()
 

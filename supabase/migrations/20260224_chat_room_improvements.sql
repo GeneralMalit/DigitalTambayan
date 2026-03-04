@@ -11,7 +11,7 @@ ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS display_name TEXT;
 CREATE OR REPLACE FUNCTION get_or_create_personal_chat(
     p_user1_id UUID,
     p_user2_id UUID
-) RETURNS UUID AS $
+) RETURNS UUID AS $$
 DECLARE
     v_room_id UUID;
     v_slug TEXT;
@@ -75,7 +75,7 @@ BEGIN
     
     RETURN v_room_id;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Leave Room with Auto-Promotion and Cleanup
 CREATE OR REPLACE FUNCTION leave_room(
@@ -194,7 +194,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION get_room_display_name(
     p_room_id UUID,
     p_current_user_id UUID
-) RETURNS TEXT AS $
+) RETURNS TEXT AS $$
 DECLARE
     v_is_personal BOOLEAN;
     v_room_name TEXT;
@@ -253,7 +253,7 @@ BEGIN
         END IF;
     END IF;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Get User Room Role
 CREATE OR REPLACE FUNCTION get_user_room_role(

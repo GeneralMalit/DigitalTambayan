@@ -1,5 +1,6 @@
+import { getAuthHeaders } from '@/lib/authHeaders'
 import { supabase } from '@/utils/supabase/client'
-import { Profile, Room, ChatSettings, RoomMember, RoomMemberWithUsername, RoomWithMeta, RoomMemberNickname } from '@/types/database'
+import { Profile, Room, ChatSettings, RoomMemberWithUsername, RoomMemberNickname } from '@/types/database'
 
 export const adminService = {
     /**
@@ -8,7 +9,7 @@ export const adminService = {
     async getAllRooms(): Promise<Room[]> {
         const { data, error } = await supabase
             .from('rooms')
-            .select('*')
+            .select('id, slug, name, owner_id, is_personal, photo_url, display_name, created_at')
             .order('created_at', { ascending: true })
 
         if (error) throw error
@@ -119,7 +120,7 @@ export const adminService = {
     async getAllUsers(): Promise<Profile[]> {
         const { data, error } = await supabase
             .from('profiles')
-            .select('*')
+            .select('id, username, avatar_url, is_admin, updated_at')
             .order('updated_at', { ascending: true })
 
         if (error) throw error
@@ -133,29 +134,14 @@ export const adminService = {
      * @param userId - The ID of the user to delete
      */
     async deleteUser(userId: string): Promise<void> {
-        // First, delete the profile from the profiles table
-        // We do this first because if auth deletion fails, we can retry
-        // If we delete auth first and profile fails, we'd have orphaned profile data
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', userId)
+        const response = await fetch(`/api/admin/users/${userId}`, {
+            method: 'DELETE',
+            headers: await getAuthHeaders()
+        })
 
-        if (profileError) {
-            console.error('Failed to delete profile:', profileError)
-            throw new Error('Failed to delete profile: ' + profileError.message)
-        }
-
-        // Then, delete the auth user using admin API
-        // Note: This requires RLS to be bypassed or service role key
-        const { error: authError } = await supabase.auth.admin.deleteUser(userId)
-
-        if (authError) {
-            console.error('Failed to delete auth user:', authError)
-            // Profile is already deleted, log warning but don't throw
-            // The profile is gone which is the main goal; auth cleanup can be done manually if needed
-            console.warn('Profile deleted but auth cleanup failed. User may need manual cleanup.')
-            throw new Error('Profile deleted but auth cleanup failed: ' + authError.message)
+        if (!response.ok) {
+            const payload = await response.json().catch(() => null)
+            throw new Error(payload?.error || 'Failed to delete user')
         }
     },
 
@@ -166,7 +152,7 @@ export const adminService = {
     async getRoomById(roomId: string): Promise<Room | null> {
         const { data, error } = await supabase
             .from('rooms')
-            .select('*')
+            .select('id, slug, name, owner_id, is_personal, photo_url, display_name, created_at')
             .eq('id', roomId)
             .single()
 
@@ -180,7 +166,7 @@ export const adminService = {
     async getChatSettings(): Promise<ChatSettings | null> {
         const { data, error } = await supabase
             .from('chat_settings')
-            .select('*')
+            .select('id, enable_message_deletion, deletion_threshold_minutes, created_at, updated_at')
             .limit(1)
             .single()
 
@@ -294,17 +280,17 @@ export const adminService = {
      * Adds a member to a room.
      * @param roomId - The ID of the room
      * @param userId - The ID of the user to add
-     * @param role - The role to assign ('owner', 'admin', 'member')
+     * @param requesterId - The ID of the user making the request
      */
-    async addRoomMember(roomId: string, userId: string, role: string = 'member'): Promise<void> {
-        const { error } = await supabase.rpc('add_room_member', {
+    async addRoomMember(roomId: string, userId: string, requesterId: string): Promise<void> {
+        const { data, error } = await supabase.rpc('add_member_to_room', {
             p_room_id: roomId,
             p_user_id: userId,
-            p_role: role,
-            p_added_by: null
+            p_requester_id: requesterId
         })
 
         if (error) throw error
+        if (data !== 'success') throw new Error(data)
     },
 
     /**
@@ -373,7 +359,7 @@ export const adminService = {
         if (memberUserIds.length === 0) {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('*')
+                .select('id, username, avatar_url, is_admin, updated_at')
                 .order('username', { ascending: true })
 
             if (error) throw error
@@ -383,7 +369,7 @@ export const adminService = {
         // Get all users excluding members using proper array syntax
         const { data, error } = await supabase
             .from('profiles')
-            .select('*')
+            .select('id, username, avatar_url, is_admin, updated_at')
             .not('id', 'in', `(${memberUserIds.join(',')})`)
             .order('username', { ascending: true })
 
@@ -533,7 +519,7 @@ export const adminService = {
     async getAllUsersForSearch(): Promise<Profile[]> {
         const { data, error } = await supabase
             .from('profiles')
-            .select('*')
+            .select('id, username, avatar_url, is_admin, updated_at')
             .order('username', { ascending: true })
 
         if (error) throw error

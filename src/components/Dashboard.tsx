@@ -355,20 +355,29 @@ export default function Dashboard() {
     useEffect(() => {
         if (!currentRoom?.id) return
 
-        // We subscribe to all profile changes for now as it's simpler and
-        // the list of room members might change. chatService.subscribeToProfileChanges
-        // can handle a batch of IDs, but since we want real-time updates for anyone
-        // who might send a message, we'll listen for any profile update and refresh our map.
-        const unsubscribe = chatService.subscribeToProfileChanges([], async () => {
-            await loadMemberAvatars()
-            // Also refresh own profile if it changed
-            const updatedProfile = await authService.getCurrentProfile()
-            if (updatedProfile) {
-                setProfile(updatedProfile as Profile)
-            }
-        })
+        let active = true
+        let unsubscribe = () => { }
+
+        const subscribeToCurrentMembers = async () => {
+            const members = await adminService.getRoomMembers(currentRoom.id)
+            if (!active) return
+
+            unsubscribe = chatService.subscribeToProfileChanges(
+                members.map((member) => member.user_id),
+                async () => {
+                    await loadMemberAvatars()
+                    const updatedProfile = await authService.getCurrentProfile()
+                    if (updatedProfile) {
+                        setProfile(updatedProfile as Profile)
+                    }
+                }
+            )
+        }
+
+        subscribeToCurrentMembers()
 
         return () => {
+            active = false
             unsubscribe()
         }
     }, [currentRoom?.id, loadMemberAvatars])

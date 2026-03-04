@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { authService } from '@/lib/authService'
-import { useRouter } from 'next/navigation'
 
 export default function AuthForm() {
     const [isLogin, setIsLogin] = useState(true)
@@ -11,7 +10,6 @@ export default function AuthForm() {
     const [username, setUsername] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const router = useRouter()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
