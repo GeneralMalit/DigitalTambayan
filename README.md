@@ -3,12 +3,22 @@ Digital Tambayan is a real-time chat app built around the idea of a friendly com
 
 ## Stack - React 19 + TypeScript
 
-![Next.js](https://img.shields.io/badge/Next.js-16.1.6-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![React](https://img.shields.io/badge/React-19-087EA4?style=for-the-badge&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind-4-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![Gemini](https://img.shields.io/badge/Gemini-API-4285F4?style=for-the-badge&logo=google&logoColor=white)
+[![Next.js](https://img.shields.io/badge/Next.js-16.1.6-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-087EA4?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-4-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Gemini](https://img.shields.io/badge/Gemini-API-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google/)
+[![Version](https://img.shields.io/badge/version-0.1.0-4c1?style=for-the-badge&logo=package.json&logoColor=white)](package.json#L2)
+
+## App Version
+
+<div align="center">
+  <a href="package.json#L2">
+    <img src="https://img.shields.io/badge/version-0.1.0-4c1?style=for-the-badge&logo=package.json&logoColor=white" alt="version" />
+  </a>
+  <p><code>package.json#version</code> is the single source of truth for the UI footer and docs.</p>
+</div>
 
 ## Key Features
 
@@ -26,7 +36,7 @@ Digital Tambayan uses a hybrid approach:
 
 - Row Level Security enforces membership-scoped access to `rooms`, `room_members`, and `messages`
 - `profiles` stores only public-ish fields (no public email column)
-- Username login uses a server route that resolves `username -> email` from a private mapping table
+- Username login uses a server route that resolves `username → email` from a private mapping table
 - Sensitive operations run server-side using a Supabase service role key
 
 Important notes:
@@ -83,13 +93,6 @@ Migrations of interest:
 
 - `supabase/migrations/20260304_security_hardening.sql`
 - `supabase/migrations/20260304_security_hardening_followup.sql`
-
-## Versioning
-
-Single source of truth is `package.json#version`.
-
-- Update version manually in `package.json`
-- UI version display is rendered from the same source via `src/lib/appMeta.ts` and shown in the global layout footer
 
 ## Repo Structure (high level)
 
