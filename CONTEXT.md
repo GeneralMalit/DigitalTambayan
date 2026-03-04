@@ -15,7 +15,8 @@
 - **Database:** Supabase (PostgreSQL)
 - **Auth:** Supabase Email/Password
 - **Real-Time:** [ENABLED] Supabase Realtime for messages, room_members, room_member_nicknames tables
-- **User Flow:** User registers with Email, Password, and Username -> Trigger creates entry in `profiles`.
+- **User Flow:** User registers with Email, Password, and Username -> Trigger creates entry in `profiles` and a private username/email lookup row for secure username login.
+- **Versioning:** UI version is sourced from `package.json#version` (single source of truth) via a server-only helper and displayed in the global layout footer.
 
 - `src/config`: Configuration/Manifests.
 - `src/components/chat`: UI presentation only.
@@ -41,7 +42,8 @@
 - Users can set nicknames for other members - only visible to the setter
 
 ## 4. Current Database Schema
-- `profiles`: `id` (PK), `username` (unique), `email` (unique), `avatar_url` (nullable), `is_admin`, `updated_at`
+- `profiles`: `id` (PK), `username` (unique), `avatar_url` (nullable), `is_admin`, `updated_at`
+- `private.user_login_emails`: `user_id` (PK/FK), `username` (unique), `email` (unique), `updated_at` - private lookup table used by the server-side username sign-in route
 - `rooms`: `id` (PK), `slug` (unique), `name`, `photo_url` (nullable), `owner_id`, `is_personal`, `display_name`, `created_at`
 - `messages`: `id` (PK), `room_id` (FK), `user_id` (FK, nullable), `sender_name`, `content`, `is_bot`, `is_system`, `created_at`
 - `room_members`: `id` (PK), `room_id` (FK), `user_id` (FK), `role` ('owner', 'admin', 'member'), `joined_at`, `added_by`
@@ -133,23 +135,38 @@
   - [x] Enhanced admin dashboard with "Personal Chat" labels and "Delete Group" functionality
 - [x] Session 1.16: Photo Sync Debugging
   - [2026-03-01] **Session 1.16**: Debugged and fixed photo syncing issues. Corrected active Supabase project ID to `ceixttcyycswwgvsiczu`. Updated `get_user_rooms` and `get_room_members_with_nicknames` RPCs via MCP. Refactored subscriptions with unique channel names. Finalized real-time photo sync.
+- [x] Session 1.17: Security Hardening
+  - [2026-03-04] Removed public email storage from `profiles` and moved username login lookup to `private.user_login_emails`
+  - [2026-03-04] Tightened RLS for rooms, room_members, messages, and chat_settings to enforce membership and admin scope
+  - [2026-03-04] Blocked self-escalation on `profiles.is_admin`
+  - [2026-03-04] Moved username sign-in, Gemini access, and auth-user deletion behind server routes
+  - [2026-03-04] Filtered sidebar realtime subscriptions and fixed member avatar profile subscriptions
+- [x] Session 1.18: Universal App Version
+  - [2026-03-04] Added server-only `APP_VERSION` sourced from `package.json#version`
+  - [2026-03-04] Displayed app version in the global layout footer
 
 ## 7. Active Constraints
 - Auth: Custom Sign-up/Login forms required.
 - Admin: Manually toggle `is_admin` in Supabase dashboard for the tester account.
-- Berto Bot: Fully integrated with Gemini API (`gemma-3-27b-it`). Support for nickname-aware context (perspectives).
+- Berto Bot: Fully integrated with Gemini API (`gemma-3-27b-it`) through a server route. Support for nickname-aware context (perspectives).
 - **Schema Consolidated**: Chat room improvements are in `00000_initial_schema.sql` and separate migration files
 
 ## 8. Key Files Reference
 - `src/config/botManifest.ts` - Bot configuration (BOT_NAME constant, trigger, placeholder responses, system prompt)
 - `src/config/uiStrings.ts` - Centralized UI strings manifest (includes nickname-related strings)
 - `src/utils/supabase/client.ts` - Singleton Supabase client for shared WebSocket connections
+- `src/utils/supabase/admin.ts` - Server-only Supabase admin client using the service role key
+- `src/lib/appMeta.ts` - Server-only app metadata (name/version) sourced from `package.json`
 - `src/hooks/useChat.ts` - Chat state management with real-time subscriptions
 - `src/hooks/useTypingIndicator.ts` - Typing indicator broadcast logic
 - `src/lib/chatService.ts` - Message CRUD, real-time subscriptions, room management, Berto bot integration logic, real-time photo/avatar subscriptions
 - `src/lib/adminService.ts` - Admin operations, room member management, permission checks, nickname management, group deletion
 - `src/lib/storageService.ts` - (NEW) Storage service for photo uploads and image processing
-- `src/lib/aiService.ts` - (NEW) AI service for Berto bot integration
+- `src/lib/aiService.ts` - (NEW) Client-side wrapper for the secure Berto bot route
+- `src/app/api/auth/sign-in/route.ts` - Server route for secure email-or-username sign-in
+- `src/app/api/ai/respond/route.ts` - Server route for Gemini requests
+- `src/app/api/admin/users/[userId]/route.ts` - Server route for admin-only auth-user deletion
+- `supabase/migrations/20260304_security_hardening.sql` - RLS hardening, admin protection, and private login lookup
 - `src/components/Dashboard.tsx` - Main dashboard with sidebar layout, chat, settings modal, nickname handling
 - `src/components/chat/RoomSidebar.tsx` - Left sidebar showing all user's rooms with real-time updates
 - `src/components/chat/MembersList.tsx` - Room members display, management, nickname editing UI
@@ -229,7 +246,7 @@
 ### aiService
 | Method | Description |
 |--------|-------------|
-| `generateResponse(formattedContext)` | Generates AI response from Gemini API using the configured system prompt |
+| `generateResponse(roomId, formattedContext)` | Calls the secure Berto route and returns the generated response text |
 
 ### chatService
 | Method | Description |
@@ -311,11 +328,12 @@
 3. Bot checks for @Berto mention in `chatService.sendMessage`
 4. If found, triggers `triggerBotResponse(roomId, triggerUserId)`
 5. Fetches recent messages for context, using the triggering user's set nicknames for all participants
-6. Calls Gemini API using `aiService.generateResponse`
+6. Calls the secure Berto route using `aiService.generateResponse`
 7. Saves AI response as bot message (sender name from `BOT_CONFIG.name`)
 
 ### Environment Variables
-- `NEXT_PUBLIC_GEMINI_API_KEY` - Required for AI responses
+- `GEMINI_API_KEY` - Required for AI responses
+- `SUPABASE_SERVICE_ROLE_KEY` - Required for secure server-side admin operations and username lookup
 
 ## 15. Realtime Stability Fixes
 
