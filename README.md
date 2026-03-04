@@ -1,5 +1,4 @@
 # Digital Tambayan
-
 Digital Tambayan is a real-time chat app built around the idea of a friendly community "tambayan": fast DMs, flexible group chats, private nicknames, photos, and a nickname-aware AI companion (Berto).
 
 ## Stack - React 19 + TypeScript
