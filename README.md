@@ -290,6 +290,37 @@ NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 
 Without `SUPABASE_SERVICE_ROLE_KEY`, username login is unavailable and admin-only server routes fail.
 
+### 8.2 GitHub OAuth setup
+
+This app supports GitHub OAuth through Supabase Auth alongside the existing email/password flow.
+
+In GitHub Developer Settings, create an OAuth App:
+
+```text
+Homepage URL: http://127.0.0.1:3000
+Authorization callback URL: https://<project-ref>.supabase.co/auth/v1/callback
+```
+
+For local Supabase CLI auth, use:
+
+```text
+Authorization callback URL: http://localhost:54321/auth/v1/callback
+```
+
+In Supabase Dashboard > Authentication > Providers > GitHub:
+
+1. Enable GitHub.
+2. Paste the GitHub OAuth app Client ID and Client Secret.
+3. Add allowed redirect URLs for each app origin callback, for example:
+
+```text
+http://127.0.0.1:3000/auth/callback
+http://localhost:3000/auth/callback
+https://your-domain.example/auth/callback
+```
+
+First-time GitHub users receive a temporary `pending_*` username and finish setup at `/auth/setup-username`.
+
 ---
 
 ## 9. Database and storage setup

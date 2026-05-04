@@ -1,4 +1,5 @@
 import { supabase } from '@/utils/supabase/client'
+import { sanitizeUsername, validateUsername } from '@/lib/username'
 
 export const authService = {
     /**
@@ -50,6 +51,61 @@ export const authService = {
     },
 
     /**
+     * Starts the GitHub OAuth flow. Supabase will redirect back through
+     * /auth/callback so the app can decide whether username setup is needed.
+     */
+    async signInWithGitHub() {
+        const redirectTo = `${window.location.origin}/auth/callback`
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+                redirectTo,
+            },
+        })
+
+        if (error) throw error
+        return data
+    },
+
+    /**
+     * Completes profile setup for OAuth-created users by replacing their
+     * temporary pending_* username with the app username they chose.
+     */
+    async completeOAuthUsername(username: string) {
+        const cleanUsername = sanitizeUsername(username)
+        const validationError = validateUsername(cleanUsername)
+        if (validationError) throw new Error(validationError)
+
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+        if (userError) throw userError
+        if (!user) throw new Error('Not authenticated')
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({ username: cleanUsername })
+            .eq('id', user.id)
+            .select('id, username, avatar_url, is_admin, updated_at')
+            .single()
+
+        if (error) {
+            if (error.code === '23505') {
+                throw new Error('That username is already taken')
+            }
+            throw error
+        }
+
+        await supabase.auth.updateUser({
+            data: {
+                username: cleanUsername,
+                oauth_username_completed: true,
+            },
+        })
+
+        return data
+    },
+
+    /**
      * Signs out the current user.
      */
     async signOut() {
@@ -64,6 +120,15 @@ export const authService = {
         const { data: { session }, error } = await supabase.auth.getSession()
         if (error) throw error
         return session
+    },
+
+    /**
+     * Gets the current authenticated Supabase user.
+     */
+    async getCurrentUser() {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (error) throw error
+        return user
     },
 
     /**

@@ -16,12 +16,17 @@ import { AdminDashboard } from './admin'
 import ImageCropModal from './chat/ImageCropModal'
 import { storageService } from '@/lib/storageService'
 
+type AuthIdentity = {
+    provider?: string
+}
+
 export default function Dashboard() {
     const [profile, setProfile] = useState<Profile | null>(null)
     const [currentRoom, setCurrentRoom] = useState<Room | null>(null)
     const [loading, setLoading] = useState(true)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
     const [settingsTab, setSettingsTab] = useState<'admin' | 'password'>('password')
+    const [canChangePassword, setCanChangePassword] = useState(true)
 
     // Members panel state
     const [isMembersOpen, setIsMembersOpen] = useState(false)
@@ -131,8 +136,15 @@ export default function Dashboard() {
                     authService.getCurrentProfile(),
                     adminService.getChatSettings()
                 ])
+                const authUser = await authService.getCurrentUser()
+                const hasEmailIdentity = Boolean(
+                    authUser?.identities?.some((identity: AuthIdentity) => identity.provider === 'email')
+                    || authUser?.app_metadata?.provider === 'email'
+                )
+
                 setProfile(profileData as Profile)
                 setChatSettings(settingsData)
+                setCanChangePassword(hasEmailIdentity)
 
                 // Load the user's rooms and select the first one (or last used)
                 if (profileData) {
@@ -653,6 +665,10 @@ export default function Dashboard() {
                                         refreshMessages()
                                     }}
                                 />
+                            ) : !canChangePassword ? (
+                                <div className="rounded-md border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-stone-600">
+                                    This account signs in with GitHub. Password changes are only available for email and password accounts.
+                                </div>
                             ) : (
                                 <form onSubmit={handlePasswordChange} className="space-y-4">
                                     {passError && (

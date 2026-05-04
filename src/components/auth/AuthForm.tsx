@@ -1,7 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { authService } from '@/lib/authService'
+
+function getErrorMessage(error: unknown, fallback: string) {
+    return error instanceof Error ? error.message : fallback
+}
 
 export default function AuthForm() {
     const [isLogin, setIsLogin] = useState(true)
@@ -9,7 +13,20 @@ export default function AuthForm() {
     const [password, setPassword] = useState('')
     const [username, setUsername] = useState('')
     const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const [oauthLoading, setOauthLoading] = useState(false)
+    const [error, setError] = useState<string | null>(() => {
+        if (typeof window === 'undefined') return null
+        return new URLSearchParams(window.location.search).get('auth_error')
+    })
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+
+        const params = new URLSearchParams(window.location.search)
+        if (params.has('auth_error')) {
+            window.history.replaceState({}, '', window.location.pathname)
+        }
+    }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -23,10 +40,22 @@ export default function AuthForm() {
                 await authService.signUp(identifier, password, username)
                 alert('Check your email for the confirmation link!')
             }
-        } catch (err: any) {
-            setError(err.message || 'An authentication error occurred')
+        } catch (err: unknown) {
+            setError(getErrorMessage(err, 'An authentication error occurred'))
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleGitHubSignIn = async () => {
+        setOauthLoading(true)
+        setError(null)
+
+        try {
+            await authService.signInWithGitHub()
+        } catch (err: unknown) {
+            setError(getErrorMessage(err, 'Unable to start GitHub sign-in'))
+            setOauthLoading(false)
         }
     }
 
@@ -47,6 +76,24 @@ export default function AuthForm() {
                         {error}
                     </div>
                 )}
+
+                <button
+                    type="button"
+                    onClick={handleGitHubSignIn}
+                    disabled={oauthLoading || loading}
+                    className="flex w-full items-center justify-center gap-2 rounded-md border border-stone-300 bg-white py-3 text-sm font-semibold text-stone-900 transition-colors hover:bg-stone-50 disabled:opacity-50"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
+                        <path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.54 2.87 8.39 6.84 9.75.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.35 1.12 2.92.86.09-.67.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.27 9.27 0 0 1 12 7.01c.85 0 1.7.12 2.5.35 1.9-1.33 2.74-1.05 2.74-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.07.36.32.68.94.68 1.9 0 1.38-.01 2.49-.01 2.83 0 .27.18.59.69.49A10.08 10.08 0 0 0 22 12.26C22 6.58 17.52 2 12 2z" />
+                    </svg>
+                    {oauthLoading ? 'Opening GitHub...' : 'Continue with GitHub'}
+                </button>
+
+                <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-stone-200" />
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-stone-400">or</span>
+                    <div className="h-px flex-1 bg-stone-200" />
+                </div>
 
                 <div className="space-y-3">
                     {!isLogin && (
