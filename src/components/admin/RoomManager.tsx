@@ -92,7 +92,7 @@ export default function RoomManager({ currentUserId, onRefresh, onMessagesCleare
     if (loading) {
         return (
             <div className="flex items-center justify-center py-8">
-                <div className="text-zinc-500 animate-pulse">Loading rooms...</div>
+                <div className="text-stone-500 animate-pulse">Loading rooms...</div>
             </div>
         )
     }
@@ -101,14 +101,14 @@ export default function RoomManager({ currentUserId, onRefresh, onMessagesCleare
         <div className="space-y-6">
             {/* Error Display */}
             {error && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                     {error}
                 </div>
             )}
 
             {/* Create Room Form */}
             <form onSubmit={handleCreateRoom} className="space-y-3">
-                <h4 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+                <h4 className="text-sm font-semibold text-stone-600 uppercase tracking-wider">
                     {UI_STRINGS.admin.addNewRoom}
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
@@ -117,7 +117,7 @@ export default function RoomManager({ currentUserId, onRefresh, onMessagesCleare
                         value={newRoomSlug}
                         onChange={(e) => setNewRoomSlug(e.target.value)}
                         placeholder="Room slug (e.g., random)"
-                        className="rounded-lg bg-white/5 border-white/10 py-2 px-3 text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none placeholder-zinc-600"
+                        className="rounded-lg bg-white border border-stone-200 py-2 px-3 text-stone-950 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder-stone-400 disabled:bg-stone-50 disabled:text-stone-400"
                         disabled={creating}
                     />
                     <input
@@ -125,14 +125,14 @@ export default function RoomManager({ currentUserId, onRefresh, onMessagesCleare
                         value={newRoomName}
                         onChange={(e) => setNewRoomName(e.target.value)}
                         placeholder="Room name (e.g., Random)"
-                        className="rounded-lg bg-white/5 border-white/10 py-2 px-3 text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none placeholder-zinc-600"
+                        className="rounded-lg bg-white border border-stone-200 py-2 px-3 text-stone-950 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder-stone-400 disabled:bg-stone-50 disabled:text-stone-400"
                         disabled={creating}
                     />
                 </div>
                 <button
                     type="submit"
                     disabled={creating || !newRoomSlug.trim() || !newRoomName.trim()}
-                    className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {creating ? UI_STRINGS.admin.creating : UI_STRINGS.admin.createRoom}
                 </button>
@@ -140,34 +140,34 @@ export default function RoomManager({ currentUserId, onRefresh, onMessagesCleare
 
             {/* Room List */}
             <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+                <h4 className="text-sm font-semibold text-stone-600 uppercase tracking-wider">
                     {UI_STRINGS.admin.allRooms(rooms.length)}
                 </h4>
                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
                     {rooms.length === 0 ? (
-                        <div className="text-zinc-500 text-sm text-center py-4">{UI_STRINGS.admin.noRooms}</div>
+                        <div className="text-stone-500 text-sm text-center py-4">{UI_STRINGS.admin.noRooms}</div>
                     ) : (
                         rooms.map((room) => (
                             <div
                                 key={room.id}
-                                className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5"
+                                className="flex items-center justify-between p-3 rounded-lg bg-white border border-stone-200"
                             >
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-white font-medium">{room.name || (room.is_personal ? UI_STRINGS.admin.personalChatLabel : UI_STRINGS.sidebar.unnamedGroup)}</span>
+                                        <span className="text-stone-950 font-medium">{room.name || (room.is_personal ? UI_STRINGS.admin.personalChatLabel : UI_STRINGS.sidebar.unnamedGroup)}</span>
                                         {room.is_personal && (
-                                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-700 border border-blue-100">
                                                 {UI_STRINGS.admin.personalChatLabel}
                                             </span>
                                         )}
                                     </div>
-                                    <span className="text-zinc-500 text-xs">/{room.slug || 'dm'}</span>
+                                    <span className="text-stone-500 text-xs">/{room.slug || 'dm'}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => handleDeleteMessages(room)}
                                         disabled={deleting === room.id || deletingGroup === room.id}
-                                        className="text-xs px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-white/5 transition-colors disabled:opacity-50"
+                                        className="text-xs px-3 py-1.5 rounded bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50"
                                     >
                                         {deleting === room.id ? UI_STRINGS.admin.deleting : UI_STRINGS.admin.clearMessages}
                                     </button>
@@ -175,7 +175,7 @@ export default function RoomManager({ currentUserId, onRefresh, onMessagesCleare
                                         <button
                                             onClick={() => handleDeleteGroup(room)}
                                             disabled={deleting === room.id || deletingGroup === room.id}
-                                            className="text-xs px-3 py-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors disabled:opacity-50"
+                                            className="text-xs px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors disabled:opacity-50"
                                         >
                                             {deletingGroup === room.id ? UI_STRINGS.admin.deleting : UI_STRINGS.admin.deleteGroup}
                                         </button>

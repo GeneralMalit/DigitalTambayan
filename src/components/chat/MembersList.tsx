@@ -447,20 +447,20 @@ export default function MembersList({
             <>
                 {/* Backdrop */}
                 <div
-                    className="fixed inset-0 bg-black/50 z-40"
+                    className="fixed inset-0 bg-stone-950/45 z-40"
                     onClick={onClose}
                 />
 
                 {/* Sidebar Panel - Personal Chat Panel */}
-                <div className="fixed right-0 top-0 h-full w-80 bg-zinc-900 border-l border-white/10 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col">
+                <div className="fixed right-0 top-0 h-full w-80 bg-white border-l border-stone-200 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col shadow-lg">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-white/10">
-                        <h3 className="text-lg font-semibold text-white">Personal Chat</h3>
+                    <div className="flex items-center justify-between p-4 border-b border-stone-200">
+                        <h3 className="text-lg font-semibold text-stone-950">Personal Chat</h3>
                         <button
                             onClick={onClose}
-                            className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                            className="p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
                         </button>
@@ -468,11 +468,11 @@ export default function MembersList({
 
                     {/* Error Message */}
                     {error && (
-                        <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                        <div className="mx-4 mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                             {error}
                             <button
                                 onClick={() => setError(null)}
-                                className="ml-2 text-red-400 hover:text-red-300"
+                                className="ml-2 text-red-700 hover:text-red-900 underline-offset-2 hover:underline"
                             >
                                 Dismiss
                             </button>
@@ -482,10 +482,10 @@ export default function MembersList({
                     {/* Members with Nicknames */}
                     <div className="flex-1 overflow-y-auto p-4">
                         <div className="mb-4">
-                            <h4 className="text-xs text-zinc-500 uppercase tracking-wide mb-3">
+                            <h4 className="text-xs text-stone-500 uppercase tracking-wide mb-3">
                                 {UI_STRINGS.nicknames.editNicknames}
                             </h4>
-                            <p className="text-xs text-zinc-600 mb-4">
+                            <p className="text-xs text-stone-500 mb-4">
                                 Set nicknames for this conversation. Only you will see these names.
                             </p>
                         </div>
@@ -495,7 +495,7 @@ export default function MembersList({
                                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
                             </div>
                         ) : members.length === 0 ? (
-                            <div className="text-center py-8 text-zinc-500">
+                            <div className="text-center py-8 text-stone-500">
                                 <p className="text-sm">No members found</p>
                             </div>
                         ) : (
@@ -508,10 +508,10 @@ export default function MembersList({
                                     return (
                                         <li
                                             key={member.user_id}
-                                            className="flex items-center gap-3 p-3 rounded-lg bg-white/5"
+                                            className="flex items-center gap-3 p-3 rounded-lg bg-stone-50 border border-stone-200"
                                         >
                                             {/* Avatar */}
-                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white text-sm font-medium shrink-0 ring-1 ring-white/10">
+                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white text-sm font-medium shrink-0 ring-1 ring-blue-100">
                                                 {member.avatar_url ? (
                                                     <img
                                                         src={member.avatar_url}
@@ -525,19 +525,19 @@ export default function MembersList({
 
                                             {/* Name and Nickname */}
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-white truncate">
+                                                <p className="text-sm font-medium text-stone-950 truncate">
                                                     {member.username}
                                                     {isCurrentUser && (
-                                                        <span className="text-zinc-500 text-xs ml-1">(you)</span>
+                                                        <span className="text-stone-500 text-xs ml-1">(you)</span>
                                                     )}
                                                 </p>
                                                 {currentNickname && !isEditingThis && (
-                                                    <p className="text-xs text-blue-400">
+                                                    <p className="text-xs text-blue-700">
                                                         {UI_STRINGS.nicknames.nickname}: {currentNickname}
                                                     </p>
                                                 )}
                                                 {!currentNickname && !isEditingThis && (
-                                                    <p className="text-xs text-zinc-600">
+                                                    <p className="text-xs text-stone-500">
                                                         {UI_STRINGS.nicknames.noNickname}
                                                     </p>
                                                 )}
@@ -551,7 +551,7 @@ export default function MembersList({
                                                             onChange={(e) => setNicknameInput(e.target.value)}
                                                             onKeyDown={(e) => handleNicknameKeyDown(e, member.user_id)}
                                                             placeholder={UI_STRINGS.nicknames.placeholder}
-                                                            className="flex-1 min-w-0 bg-white/10 border border-white/10 rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            className="flex-1 min-w-0 bg-white border border-stone-200 rounded px-2 py-1 text-sm text-stone-950 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                             autoFocus
                                                             disabled={nicknameLoading}
                                                             maxLength={50}
@@ -559,7 +559,7 @@ export default function MembersList({
                                                         <button
                                                             onClick={() => handleSaveNickname(member.user_id)}
                                                             disabled={nicknameLoading}
-                                                            className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-white/10 rounded transition-colors disabled:opacity-50 shrink-0"
+                                                            className="p-1.5 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded transition-colors disabled:opacity-50 shrink-0"
                                                             title="Save nickname"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -574,7 +574,7 @@ export default function MembersList({
                                             {!isEditingThis && (
                                                 <button
                                                     onClick={() => handleStartEditNickname(member.user_id, currentNickname)}
-                                                    className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                                                    className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded transition-colors"
                                                     title={UI_STRINGS.nicknames.setNickname}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -597,20 +597,20 @@ export default function MembersList({
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/50 z-40"
+                className="fixed inset-0 bg-stone-950/45 z-40"
                 onClick={onClose}
             />
 
             {/* Sidebar Panel */}
-            <div className="fixed right-0 top-0 h-full w-80 bg-zinc-900 border-l border-white/10 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col">
+            <div className="fixed right-0 top-0 h-full w-80 bg-white border-l border-stone-200 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col shadow-lg">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/10">
-                    <h3 className="text-lg font-semibold text-white">Group Chat</h3>
+                <div className="flex items-center justify-between p-4 border-b border-stone-200">
+                    <h3 className="text-lg font-semibold text-stone-950">Group Chat</h3>
                     <button
                         onClick={onClose}
-                        className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                         </svg>
                     </button>
@@ -618,8 +618,8 @@ export default function MembersList({
 
                 {/* Group Name Section - Only for group chats, all members can edit */}
                 {!isPersonalChat && (
-                    <div className="px-4 py-3 border-b border-white/10">
-                        <label className="text-xs text-zinc-500 uppercase tracking-wide">
+                    <div className="px-4 py-3 border-b border-stone-200">
+                        <label className="text-xs text-stone-500 uppercase tracking-wide">
                             Group Name
                         </label>
                         {isEditingName ? (
@@ -630,14 +630,14 @@ export default function MembersList({
                                     onChange={(e) => setNewRoomName(e.target.value)}
                                     onKeyDown={handleNameKeyDown}
                                     placeholder="Enter group name"
-                                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="flex-1 bg-white border border-stone-200 rounded-lg px-3 py-1.5 text-stone-950 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     autoFocus
                                     disabled={nameEditLoading}
                                 />
                                 <button
                                     onClick={handleSaveRoomName}
                                     disabled={nameEditLoading || !newRoomName.trim()}
-                                    className="p-1.5 text-green-500 hover:bg-green-500/10 rounded transition-colors disabled:opacity-50"
+                                    className="p-1.5 text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded transition-colors disabled:opacity-50"
                                     title="Save"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -647,7 +647,7 @@ export default function MembersList({
                                 <button
                                     onClick={handleCancelEditName}
                                     disabled={nameEditLoading}
-                                    className="p-1.5 text-red-500 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50"
+                                    className="p-1.5 text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 rounded transition-colors disabled:opacity-50"
                                     title="Cancel"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -657,12 +657,12 @@ export default function MembersList({
                             </div>
                         ) : (
                             <div className="flex items-center justify-between mt-1">
-                                <span className="text-white font-medium truncate">
+                                <span className="text-stone-950 font-medium truncate">
                                     {room?.name || 'Unnamed Group'}
                                 </span>
                                 <button
                                     onClick={handleStartEditName}
-                                    className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                                    className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded transition-colors"
                                     title="Edit group name"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -676,11 +676,11 @@ export default function MembersList({
 
                 {/* Error Message */}
                 {error && (
-                    <div className="mx-4 mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                    <div className="mx-4 mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                         {error}
                         <button
                             onClick={() => setError(null)}
-                            className="ml-2 text-red-400 hover:text-red-300"
+                            className="ml-2 text-red-700 hover:text-red-900 underline-offset-2 hover:underline"
                         >
                             Dismiss
                         </button>
@@ -688,20 +688,20 @@ export default function MembersList({
                 )}
 
                 {/* Nicknames Section */}
-                <div className="px-4 py-3 border-b border-white/10">
+                <div className="px-4 py-3 border-b border-stone-200">
                     <div className="flex items-center justify-between">
-                        <label className="text-xs text-zinc-500 uppercase tracking-wide">
+                        <label className="text-xs text-stone-500 uppercase tracking-wide">
                             {UI_STRINGS.nicknames.editNicknames}
                         </label>
                         <button
                             onClick={() => setIsEditingNicknames(!isEditingNicknames)}
-                            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                            className="text-xs text-blue-700 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded transition-colors"
                         >
                             {isEditingNicknames ? UI_STRINGS.common.cancel : UI_STRINGS.nicknames.editNicknames}
                         </button>
                     </div>
                     {!isEditingNicknames && (
-                        <p className="text-xs text-zinc-600 mt-1">
+                        <p className="text-xs text-stone-500 mt-1">
                             {Object.keys(nicknames).length > 0
                                 ? `${Object.keys(nicknames).length} nickname(s) set`
                                 : UI_STRINGS.nicknames.noNickname
@@ -710,7 +710,7 @@ export default function MembersList({
                     )}
                     {isEditingNicknames && (
                         <div className="mt-3 space-y-2">
-                            <p className="text-xs text-zinc-600 mb-2">
+                            <p className="text-xs text-stone-500 mb-2">
                                 Set nicknames for members. Only you will see these names.
                             </p>
                             {members.map((member) => {
@@ -718,14 +718,14 @@ export default function MembersList({
                                 const isEditingThis = editingNicknameFor === member.user_id
 
                                 return (
-                                    <div key={member.user_id} className="flex items-center gap-2 p-2 bg-white/5 rounded">
+                                    <div key={member.user_id} className="flex items-center gap-2 p-2 bg-stone-50 border border-stone-200 rounded">
                                         <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-medium shrink-0">
                                             {member.username?.charAt(0).toUpperCase() || '?'}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-white truncate">{member.username}</p>
+                                            <p className="text-xs text-stone-950 truncate">{member.username}</p>
                                             {currentNickname && !isEditingThis && (
-                                                <p className="text-xs text-blue-400">{currentNickname}</p>
+                                                <p className="text-xs text-blue-700">{currentNickname}</p>
                                             )}
                                             {isEditingThis && (
                                                 <div className="flex items-center gap-1 mt-1">
@@ -735,7 +735,7 @@ export default function MembersList({
                                                         onChange={(e) => setNicknameInput(e.target.value)}
                                                         onKeyDown={(e) => handleNicknameKeyDown(e, member.user_id)}
                                                         placeholder={UI_STRINGS.nicknames.placeholder}
-                                                        className="flex-1 bg-white/10 border border-white/10 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        className="flex-1 bg-white border border-stone-200 rounded px-2 py-0.5 text-xs text-stone-950 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                         autoFocus
                                                         disabled={nicknameLoading}
                                                         maxLength={50}
@@ -743,7 +743,7 @@ export default function MembersList({
                                                     <button
                                                         onClick={() => handleSaveNickname(member.user_id)}
                                                         disabled={nicknameLoading}
-                                                        className="p-1 text-zinc-500 hover:text-zinc-300 hover:bg-white/10 rounded"
+                                                        className="p-1 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded"
                                                         title="Save nickname"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
@@ -756,7 +756,7 @@ export default function MembersList({
                                         {!isEditingThis && (
                                             <button
                                                 onClick={() => handleStartEditNickname(member.user_id, currentNickname)}
-                                                className="p-1 text-zinc-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                                                className="p-1 text-stone-500 hover:text-stone-900 hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded transition-colors"
                                                 title={UI_STRINGS.nicknames.setNickname}
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
@@ -773,17 +773,17 @@ export default function MembersList({
 
                 {/* Group Photo Section (Group chats only) */}
                 {!isPersonalChat && room && (
-                    <div className="p-4 border-b border-white/10 space-y-4">
+                    <div className="p-4 border-b border-stone-200 space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="relative">
                                 {room.photo_url ? (
                                     <img
                                         src={room.photo_url}
                                         alt={room.name}
-                                        className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/10"
+                                        className="w-16 h-16 rounded-lg object-cover ring-2 ring-stone-200"
                                     />
                                 ) : (
-                                    <div className="w-16 h-16 rounded-2xl bg-purple-600 flex items-center justify-center text-white ring-2 ring-white/10">
+                                    <div className="w-16 h-16 rounded-lg bg-blue-600 flex items-center justify-center text-white ring-2 ring-blue-100">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
                                             <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3.005 3.005 0 013.75-2.906z" />
                                         </svg>
@@ -791,8 +791,8 @@ export default function MembersList({
                                 )}
                             </div>
                             <div className="flex-1 space-y-1">
-                                <h4 className="text-sm font-semibold text-white">Group Photo</h4>
-                                <p className="text-xs text-zinc-500">Standardize your group identity</p>
+                                <h4 className="text-sm font-semibold text-stone-950">Group Photo</h4>
+                                <p className="text-xs text-stone-500">Standardize your group identity</p>
                             </div>
                             {isAdmin && (
                                 <button
@@ -809,7 +809,7 @@ export default function MembersList({
                                         }
                                         input.click()
                                     }}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors border border-white/5"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white hover:bg-stone-50 text-stone-600 hover:text-stone-950 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors border border-stone-200"
                                     title="Change group photo"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -829,7 +829,7 @@ export default function MembersList({
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
                         </div>
                     ) : members.length === 0 ? (
-                        <div className="text-center py-8 text-zinc-500">
+                        <div className="text-center py-8 text-stone-500">
                             <p className="text-sm">No members yet</p>
                         </div>
                     ) : (
@@ -841,7 +841,7 @@ export default function MembersList({
                                 return (
                                     <li
                                         key={member.user_id}
-                                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors"
+                                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-stone-50 transition-colors"
                                     >
                                         {/* Avatar */}
                                         <button
@@ -856,7 +856,7 @@ export default function MembersList({
                                                     })
                                                 }
                                             }}
-                                            className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium shrink-0 hover:ring-2 hover:ring-blue-400 transition-all overflow-hidden"
+                                            className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium shrink-0 hover:ring-2 hover:ring-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all overflow-hidden"
                                         >
                                             {member.avatar_url ? (
                                                 <img
@@ -872,19 +872,19 @@ export default function MembersList({
                                         {/* Name and Role */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <p className="text-sm font-medium text-white truncate">
+                                                <p className="text-sm font-medium text-stone-950 truncate">
                                                     {getDisplayName(member)}
                                                     {isCurrentUser && (
-                                                        <span className="text-zinc-500 text-xs ml-1">(you)</span>
+                                                        <span className="text-stone-500 text-xs ml-1">(you)</span>
                                                     )}
                                                 </p>
                                                 {nicknames[member.user_id] && (
-                                                    <span className="text-xs text-zinc-600 truncate">
+                                                    <span className="text-xs text-stone-500 truncate">
                                                         ({member.username})
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-xs text-zinc-500 capitalize">
+                                            <p className="text-xs text-stone-500 capitalize">
                                                 {member.role}
                                             </p>
                                         </div>
@@ -897,7 +897,7 @@ export default function MembersList({
                                                     <button
                                                         onClick={() => handleDemoteFromAdmin(member.user_id)}
                                                         disabled={actionLoading}
-                                                        className="p-1.5 text-xs text-yellow-500 hover:bg-yellow-500/10 rounded transition-colors disabled:opacity-50"
+                                                        className="p-1.5 text-xs text-amber-700 hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded transition-colors disabled:opacity-50"
                                                         title="Remove admin"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -908,7 +908,7 @@ export default function MembersList({
                                                     <button
                                                         onClick={() => handlePromoteToAdmin(member.user_id)}
                                                         disabled={actionLoading}
-                                                        className="p-1.5 text-xs text-green-500 hover:bg-green-500/10 rounded transition-colors disabled:opacity-50"
+                                                        className="p-1.5 text-xs text-emerald-700 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded transition-colors disabled:opacity-50"
                                                         title="Make admin"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -921,7 +921,7 @@ export default function MembersList({
                                                 <button
                                                     onClick={() => handleRemoveMember(member.user_id)}
                                                     disabled={actionLoading}
-                                                    className="p-1.5 text-xs text-red-500 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50"
+                                                    className="p-1.5 text-xs text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 rounded transition-colors disabled:opacity-50"
                                                     title="Remove member"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -938,13 +938,13 @@ export default function MembersList({
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-4 border-t border-white/10 space-y-2">
+                <div className="p-4 border-t border-stone-200 space-y-2">
                     {/* Add Member Button (Admin only in group chats) */}
                     {!isPersonalChat && isAdmin && (
                         <button
                             onClick={openAddMemberModal}
                             disabled={actionLoading}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
@@ -958,7 +958,7 @@ export default function MembersList({
                         <button
                             onClick={handleLeaveRoom}
                             disabled={actionLoading}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-500 font-medium transition-colors disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors disabled:opacity-50"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4.414l-4.293 4.293a1 1 0 01-1.414 0L4 7.414 5.414 6l3.293 3.293L13 5l1 2.414z" clipRule="evenodd" />
@@ -972,7 +972,7 @@ export default function MembersList({
                         <button
                             onClick={handleDeleteRoom}
                             disabled={actionLoading}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium transition-colors disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -984,7 +984,7 @@ export default function MembersList({
 
                 {/* Member Count */}
                 <div className="px-4 pb-4">
-                    <p className="text-sm text-zinc-500">
+                    <p className="text-sm text-stone-500">
                         {members.length} {members.length === 1 ? 'member' : 'members'}
                     </p>
                 </div>
@@ -993,15 +993,15 @@ export default function MembersList({
             {/* Add Member Modal */}
             {
                 isAddMemberOpen && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-                        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl">
-                            <div className="flex items-center justify-between p-4 border-b border-white/10">
-                                <h3 className="text-lg font-semibold text-white">Add Member</h3>
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-stone-950/45 backdrop-blur-sm">
+                        <div className="w-full max-w-md rounded-lg border border-stone-200 bg-white shadow-lg">
+                            <div className="flex items-center justify-between p-4 border-b border-stone-200">
+                                <h3 className="text-lg font-semibold text-stone-950">Add Member</h3>
                                 <button
                                     onClick={() => setIsAddMemberOpen(false)}
-                                    className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                                    className="p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                                     </svg>
                                 </button>
@@ -1009,7 +1009,7 @@ export default function MembersList({
 
                             <div className="max-h-80 overflow-y-auto p-2">
                                 {availableUsers.length === 0 ? (
-                                    <div className="p-4 text-center text-zinc-500 text-sm">
+                                    <div className="p-4 text-center text-stone-500 text-sm">
                                         No users available to add
                                     </div>
                                 ) : (
@@ -1018,12 +1018,12 @@ export default function MembersList({
                                             key={user.id}
                                             onClick={() => handleAddMember(user.id)}
                                             disabled={actionLoading}
-                                            className="w-full flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+                                            className="w-full flex items-center gap-3 p-3 hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors disabled:opacity-50"
                                         >
                                             <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
                                                 {user.username.charAt(0).toUpperCase()}
                                             </div>
-                                            <span className="text-sm text-white">{user.username}</span>
+                                            <span className="text-sm text-stone-800">{user.username}</span>
                                         </button>
                                     ))
                                 )}

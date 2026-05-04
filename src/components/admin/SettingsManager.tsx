@@ -74,7 +74,7 @@ export default function SettingsManager({ onRefresh }: SettingsManagerProps) {
 
     if (!settings) {
         return (
-            <div className="text-center py-8 text-zinc-500">
+            <div className="text-center py-8 text-stone-500">
                 <p>Unable to load settings.</p>
                 <p className="text-xs mt-2">Make sure you have run the database migration and are an admin.</p>
             </div>
@@ -84,18 +84,18 @@ export default function SettingsManager({ onRefresh }: SettingsManagerProps) {
     return (
         <div className="space-y-6">
             {/* Message Deletion Settings */}
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <h4 className="text-sm font-medium text-white mb-4">Message Deletion</h4>
+            <div className="bg-white rounded-lg p-4 border border-stone-200">
+                <h4 className="text-sm font-medium text-stone-950 mb-4">Message Deletion</h4>
 
                 {/* Enable/Disable Toggle */}
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <p className="text-sm text-zinc-300">Allow users to delete their own messages</p>
-                        <p className="text-xs text-zinc-500 mt-1">When disabled, the delete button will not appear on messages</p>
+                        <p className="text-sm text-stone-800">Allow users to delete their own messages</p>
+                        <p className="text-xs text-stone-500 mt-1">When disabled, the delete button will not appear on messages</p>
                     </div>
                     <button
                         onClick={() => setSettings(prev => prev ? { ...prev, enable_message_deletion: !prev.enable_message_deletion } : null)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings?.enable_message_deletion ? 'bg-blue-600' : 'bg-zinc-600'
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors ${settings?.enable_message_deletion ? 'bg-blue-600' : 'bg-stone-300'
                             }`}
                     >
                         <span
@@ -107,14 +107,14 @@ export default function SettingsManager({ onRefresh }: SettingsManagerProps) {
 
                 {/* Threshold Selection */}
                 <div className={`transition-opacity ${settings?.enable_message_deletion ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-                    <label className="block text-sm text-zinc-300 mb-2">
+                    <label className="block text-sm text-stone-800 mb-2">
                         Delete time window
                     </label>
-                    <p className="text-xs text-zinc-500 mb-3">Users can only delete messages within this time period</p>
+                    <p className="text-xs text-stone-500 mb-3">Users can only delete messages within this time period</p>
                     <select
                         value={settings?.deletion_threshold_minutes || 10}
                         onChange={(e) => setSettings(prev => prev ? { ...prev, deletion_threshold_minutes: Number(e.target.value) } : null)}
-                        className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full bg-white border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-950 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     >
                         {THRESHOLD_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -130,7 +130,7 @@ export default function SettingsManager({ onRefresh }: SettingsManagerProps) {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-stone-300 text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                 >
                     {saving ? 'Saving...' : 'Save Settings'}
                 </button>
@@ -138,13 +138,13 @@ export default function SettingsManager({ onRefresh }: SettingsManagerProps) {
 
             {/* Status Messages */}
             {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <p className="text-sm text-red-400">{error}</p>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700">{error}</p>
                 </div>
             )}
             {success && (
-                <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                    <p className="text-sm text-green-400">{success}</p>
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="text-sm text-emerald-700">{success}</p>
                 </div>
             )}
         </div>

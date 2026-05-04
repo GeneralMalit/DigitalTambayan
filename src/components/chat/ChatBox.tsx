@@ -52,15 +52,15 @@ export default function ChatBox({ messages, currentUserId, roomId, enableMessage
     return (
         <div
             ref={scrollRef}
-            className="h-full w-full overflow-y-auto space-y-4 pr-2 custom-scrollbar"
+            className="h-full w-full overflow-y-auto space-y-4 rounded-xl border border-stone-200 bg-stone-50/80 p-4 pr-3 custom-scrollbar"
         >
             {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-2 opacity-50">
+                <div className="flex flex-col items-center justify-center h-full text-stone-500 space-y-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.023c.09-.457.133-.915.13-1.371C3.515 16.29 2 14.282 2 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
                     </svg>
-                    <p className="text-sm">{UI_STRINGS.chat.noMessages}</p>
-                    <p className="text-xs">{UI_STRINGS.chat.startConversation}</p>
+                    <p className="text-sm font-medium text-stone-700">{UI_STRINGS.chat.noMessages}</p>
+                    <p className="text-xs text-stone-500">{UI_STRINGS.chat.startConversation}</p>
                 </div>
             ) : (
                 messages.map((msg) => (

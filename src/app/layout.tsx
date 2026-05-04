@@ -31,11 +31,11 @@ export default function RootLayout({
         className={`${inter.variable} ${outfit.variable} font-sans antialiased`}
         suppressHydrationWarning={true}
       >
-        <div className="h-screen flex flex-col overflow-hidden bg-zinc-950">
+        <div className="h-screen flex flex-col overflow-hidden bg-[#fbfaf7] text-[#1d1b18]">
           <main className="flex-1 relative overflow-hidden">
             {children}
           </main>
-          <footer className="shrink-0 w-full py-2.5 text-center text-[10px] text-zinc-600 bg-zinc-950 border-t border-white/5">
+          <footer className="shrink-0 w-full py-2.5 text-center text-[10px] text-stone-500 bg-white/85 border-t border-stone-200/80">
             (c) 2026 Digital Tambayan by General Malit - v{APP_VERSION}
           </footer>
         </div>

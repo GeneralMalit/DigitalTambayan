@@ -58,7 +58,7 @@ export default function UserManager({ currentUserId, onRefresh }: UserManagerPro
     if (loading) {
         return (
             <div className="flex items-center justify-center py-8">
-                <div className="text-zinc-500 animate-pulse">Loading users...</div>
+                <div className="text-stone-500 animate-pulse">Loading users...</div>
             </div>
         )
     }
@@ -67,45 +67,45 @@ export default function UserManager({ currentUserId, onRefresh }: UserManagerPro
         <div className="space-y-6">
             {/* Error Display */}
             {error && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                     {error}
                 </div>
             )}
 
             {/* User List */}
             <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+                <h4 className="text-sm font-semibold text-stone-600 uppercase tracking-wider">
                     All Users ({users.length})
                 </h4>
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                     {users.length === 0 ? (
-                        <div className="text-zinc-500 text-sm text-center py-4">No users found</div>
+                        <div className="text-stone-500 text-sm text-center py-4">No users found</div>
                     ) : (
                         users.map((user) => (
                             <div
                                 key={user.id}
-                                className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5"
+                                className="flex items-center justify-between p-3 rounded-lg bg-white border border-stone-200"
                             >
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-white font-medium">{user.username}</span>
+                                        <span className="text-stone-950 font-medium">{user.username}</span>
                                         {user.is_admin && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-semibold uppercase tracking-wider">
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 font-semibold uppercase tracking-wider">
                                                 Admin
                                             </span>
                                         )}
                                         {user.id === currentUserId && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 font-semibold uppercase tracking-wider">
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold uppercase tracking-wider">
                                                 You
                                             </span>
                                         )}
                                     </div>
-                                    <span className="text-zinc-500 text-xs">{user.id}</span>
+                                    <span className="text-stone-500 text-xs">{user.id}</span>
                                 </div>
                                 <button
                                     onClick={() => handleDeleteUser(user)}
                                     disabled={deleting === user.id || user.id === currentUserId}
-                                    className="text-xs px-3 py-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="text-xs px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                     title={user.id === currentUserId ? "Cannot delete yourself" : "Delete user"}
                                 >
                                     {deleting === user.id ? 'Deleting...' : 'Delete'}

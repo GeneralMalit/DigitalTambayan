@@ -31,26 +31,27 @@ export default function AuthForm() {
     }
 
     return (
-        <div className="w-full max-w-sm mx-auto space-y-10">
-            <div className="text-center space-y-2">
-                <h2 className="text-2xl font-medium tracking-tight text-white font-heading">
+        <div className="w-full space-y-6">
+            <div className="space-y-1">
+                <h2 className="text-xl font-semibold tracking-tight text-stone-950 font-heading">
                     {isLogin ? 'Sign in' : 'Create account'}
                 </h2>
-                <p className="text-sm text-zinc-500">
-                    {isLogin ? "Welcome back to the tambayan." : "Join the neighborhood vibe."}
+                <p className="text-sm text-stone-600">
+                    {isLogin ? "Welcome back to the tambayan." : "Start your community account."}
                 </p>
             </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-5" onSubmit={handleSubmit}>
                 {error && (
-                    <div className="rounded-md bg-red-500/5 p-3 text-xs text-red-400 text-center tracking-wide">
+                    <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700">
                         {error}
                     </div>
                 )}
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {!isLogin && (
-                        <div className="group relative">
+                        <div className="space-y-1.5">
+                            <label htmlFor="username" className="text-xs font-medium text-stone-700">Username</label>
                             <input
                                 id="username"
                                 name="username"
@@ -58,12 +59,15 @@ export default function AuthForm() {
                                 required
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className="w-full bg-white/[0.03] border-none rounded-md py-3 px-4 text-sm text-white placeholder-zinc-600 focus:bg-white/[0.05] focus:ring-1 focus:ring-blue-500/30 outline-none transition-all"
+                                className="w-full rounded-md border border-stone-200 bg-white px-3.5 py-3 text-sm text-stone-950 placeholder-stone-400 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 placeholder="Username"
                             />
                         </div>
                     )}
-                    <div className="group relative">
+                    <div className="space-y-1.5">
+                        <label htmlFor="identifier" className="text-xs font-medium text-stone-700">
+                            {isLogin ? 'Email or username' : 'Email address'}
+                        </label>
                         <input
                             id="identifier"
                             name="identifier"
@@ -72,11 +76,12 @@ export default function AuthForm() {
                             required
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
-                            className="w-full bg-white/[0.03] border-none rounded-md py-3 px-4 text-sm text-white placeholder-zinc-600 focus:bg-white/[0.05] focus:ring-1 focus:ring-blue-500/30 outline-none transition-all"
+                            className="w-full rounded-md border border-stone-200 bg-white px-3.5 py-3 text-sm text-stone-950 placeholder-stone-400 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             placeholder={isLogin ? "Email or Username" : "Email address"}
                         />
                     </div>
-                    <div className="group relative">
+                    <div className="space-y-1.5">
+                        <label htmlFor="password" className="text-xs font-medium text-stone-700">Password</label>
                         <input
                             id="password"
                             name="password"
@@ -85,27 +90,27 @@ export default function AuthForm() {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-white/[0.03] border-none rounded-md py-3 px-4 text-sm text-white placeholder-zinc-600 focus:bg-white/[0.05] focus:ring-1 focus:ring-blue-500/30 outline-none transition-all"
+                            className="w-full rounded-md border border-stone-200 bg-white px-3.5 py-3 text-sm text-stone-950 placeholder-stone-400 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             placeholder="Password"
                         />
                     </div>
                 </div>
 
-                <div className="pt-2">
+                <div>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full flex justify-center items-center rounded-md bg-white text-black py-3 text-sm font-semibold hover:bg-zinc-200 disabled:opacity-50 transition-all duration-300"
+                        className="w-full flex justify-center items-center rounded-md bg-stone-950 text-white py-3 text-sm font-semibold hover:bg-stone-800 disabled:opacity-50 transition-colors"
                     >
                         {loading ? 'Processing...' : (isLogin ? 'Continue' : 'Create account')}
                     </button>
                 </div>
 
-                <div className="text-center">
+                <div>
                     <button
                         type="button"
                         onClick={() => setIsLogin(!isLogin)}
-                        className="text-xs font-medium text-zinc-500 hover:text-white transition-colors duration-300"
+                        className="text-xs font-medium text-stone-600 hover:text-stone-950 transition-colors"
                     >
                         {isLogin ? "Need an account? Create one" : "Already have an account? Sign in"}
                     </button>

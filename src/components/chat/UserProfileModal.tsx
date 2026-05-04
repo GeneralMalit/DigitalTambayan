@@ -37,15 +37,15 @@ export default function UserProfileModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-all duration-300">
-            <div className="w-full max-w-sm rounded-md bg-[#0a0a0a]/90 shadow-2xl overflow-hidden ring-1 ring-white/5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/45 backdrop-blur-sm transition-all duration-300">
+            <div className="w-full max-w-sm rounded-lg bg-white shadow-lg overflow-hidden ring-1 ring-stone-200">
                 {/* Close Button */}
                 <div className="flex justify-end p-4">
                     <button
                         onClick={onClose}
-                        className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                         </svg>
                     </button>
@@ -59,17 +59,17 @@ export default function UserProfileModal({
                     </div>
 
                     {/* Username */}
-                    <h3 className="text-2xl font-medium text-white mb-2 font-heading">{user.username}</h3>
+                    <h3 className="text-2xl font-medium text-stone-950 mb-2 font-heading">{user.username}</h3>
 
                     {/* Status Badge */}
                     {user.is_admin && (
-                        <span className="px-2 py-1 text-xs font-medium bg-purple-500/20 text-purple-400 rounded-full mb-4">
+                        <span className="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 rounded-md mb-4">
                             Admin
                         </span>
                     )}
 
                     {error && (
-                        <div className="w-full p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm mb-4">
+                        <div className="w-full p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm mb-4">
                             {error}
                         </div>
                     )}
@@ -78,7 +78,7 @@ export default function UserProfileModal({
                     <button
                         onClick={handleStartChat}
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-all duration-300 disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 disabled:opacity-50"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />

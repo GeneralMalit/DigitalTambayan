@@ -130,11 +130,11 @@ export default function ImageCropModal({ imageFile, onCrop, onClose }: ImageCrop
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-            <div className="w-full max-w-md bg-zinc-900 rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-                <div className="p-6 border-b border-white/10 flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-white">{UI_STRINGS.photos.cropTitle}</h3>
-                    <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-950/55 backdrop-blur-sm">
+            <div className="w-full max-w-md bg-white rounded-lg border border-stone-200 overflow-hidden shadow-lg">
+                <div className="p-6 border-b border-stone-200 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-stone-950">{UI_STRINGS.photos.cropTitle}</h3>
+                    <button onClick={onClose} className="text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                         </svg>
@@ -142,7 +142,7 @@ export default function ImageCropModal({ imageFile, onCrop, onClose }: ImageCrop
                 </div>
 
                 <div className="p-6 space-y-6">
-                    <p className="text-xs text-zinc-500 italic">
+                    <p className="text-xs text-stone-500 italic">
                         {UI_STRINGS.photos.cropInstructions}
                     </p>
 
@@ -155,14 +155,14 @@ export default function ImageCropModal({ imageFile, onCrop, onClose }: ImageCrop
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
                             onMouseLeave={handleMouseUp}
-                            className="bg-black border border-white/5 rounded-lg cursor-move touch-none"
+                            className="bg-stone-950 border border-stone-200 rounded-lg cursor-move touch-none"
                         />
                     </div>
 
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-zinc-400">Zoom</span>
-                            <span className="text-xs text-zinc-500">{(zoom * 100).toFixed(0)}%</span>
+                            <span className="text-xs font-medium text-stone-700">Zoom</span>
+                            <span className="text-xs text-stone-500">{(zoom * 100).toFixed(0)}%</span>
                         </div>
                         <input
                             type="range"
@@ -171,21 +171,21 @@ export default function ImageCropModal({ imageFile, onCrop, onClose }: ImageCrop
                             step="0.01"
                             value={zoom}
                             onChange={(e) => setZoom(parseFloat(e.target.value))}
-                            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                            className="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
 
                     <div className="flex gap-3 pt-2">
                         <button
                             onClick={onClose}
-                            className="flex-1 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-medium transition-all"
+                            className="flex-1 py-3 rounded-lg bg-white hover:bg-stone-50 text-stone-700 font-medium border border-stone-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                         >
                             {UI_STRINGS.common.cancel}
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={loading}
-                            className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50"
+                            className="flex-1 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50"
                         >
                             {loading ? UI_STRINGS.photos.uploading : UI_STRINGS.common.upload}
                         </button>

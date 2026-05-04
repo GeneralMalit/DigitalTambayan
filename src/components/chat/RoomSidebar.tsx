@@ -264,10 +264,10 @@ export default function RoomSidebar({
 
     return (
         <>
-            <div className="w-72 h-full bg-black/10 flex flex-col transition-all duration-300">
+            <div className="w-72 h-full bg-white border-r border-stone-200 flex flex-col transition-all duration-300">
                 {/* Header */}
-                <div className="px-8 py-8 space-y-6">
-                    <h2 className="text-2xl font-semibold tracking-tight text-white font-heading">{UI_STRINGS.sidebar.messages}</h2>
+                <div className="px-6 py-7 space-y-5">
+                    <h2 className="text-2xl font-semibold tracking-tight text-stone-950 font-heading">{UI_STRINGS.sidebar.messages}</h2>
 
                     {/* Search */}
                     <div className="relative group">
@@ -277,11 +277,11 @@ export default function RoomSidebar({
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={loadUsers} // Load users when user starts searching
-                            className="w-full bg-white/[0.03] border-none rounded-md py-2.5 px-4 pl-10 text-xs text-white placeholder-zinc-600 focus:bg-white/[0.06] focus:ring-1 focus:ring-zinc-800 outline-none transition-all"
+                            className="w-full rounded-lg border border-stone-200 bg-stone-50 py-2.5 px-4 pl-10 text-sm text-stone-900 placeholder:text-stone-400 outline-none transition-all hover:border-stone-300 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
                         />
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 text-zinc-700 absolute left-3 top-1/2 -translate-y-1/2"
+                            className="h-4 w-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -302,14 +302,14 @@ export default function RoomSidebar({
                             {/* Search Results - Users */}
                             {isSearching && filteredUsers.length > 0 && (
                                 <div className="mb-2">
-                                    <div className="px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                    <div className="px-4 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wider">
                                         {UI_STRINGS.sidebar.users}
                                     </div>
                                     {filteredUsers.map((user) => (
                                         <button
                                             key={user.id}
                                             onClick={() => handleUserSelect(user)}
-                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
+                                            className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-stone-50"
                                         >
                                             {/* Avatar */}
                                             <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium shrink-0">
@@ -318,10 +318,10 @@ export default function RoomSidebar({
 
                                             {/* User Info */}
                                             <div className="flex-1 min-w-0 text-left">
-                                                <p className="text-sm font-medium text-white truncate">
+                                                <p className="text-sm font-medium text-stone-950 truncate">
                                                     {user.username}
                                                 </p>
-                                                <p className="text-xs text-blue-500 truncate mt-0.5">
+                                                <p className="text-xs text-blue-600 truncate mt-0.5">
                                                     {UI_STRINGS.sidebar.startConversation}
                                                 </p>
                                             </div>
@@ -333,7 +333,7 @@ export default function RoomSidebar({
                             {/* Personal Chats Section */}
                             {(!isSearching || personalChats.length > 0) && (
                                 <div className="mb-2">
-                                    <div className="px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                    <div className="px-4 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wider">
                                         {UI_STRINGS.sidebar.directMessages}
                                     </div>
                                     {personalChats.map((room) => {
@@ -342,7 +342,7 @@ export default function RoomSidebar({
                                             <button
                                                 key={room.id}
                                                 onClick={() => handleRoomClick(room)}
-                                                className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${currentRoomId === room.id ? 'bg-white/10' : ''
+                                                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-stone-50 ${currentRoomId === room.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
                                                     }`}
                                             >
                                                 {/* Avatar */}
@@ -351,36 +351,36 @@ export default function RoomSidebar({
                                                         <img
                                                             src={room.photo_url}
                                                             alt={displayNames[room.id] || room.name || ''}
-                                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-white/5"
+                                                            className="w-10 h-10 rounded-full object-cover ring-1 ring-stone-200"
                                                         />
                                                     ) : (
-                                                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium shrink-0 ring-2 ring-white/5">
+                                                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium shrink-0 ring-1 ring-stone-200">
                                                             {(displayNames[room.id] || '?').charAt(0).toUpperCase()}
                                                         </div>
                                                     )}
                                                     {isUnread && (
-                                                        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-blue-500 rounded-full border-2 border-zinc-950" />
+                                                        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-orange-500 rounded-full border-2 border-white" />
                                                     )}
                                                 </div>
 
                                                 {/* Room Info */}
                                                 <div className="flex-1 min-w-0 text-left">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <p className={`text-sm font-medium text-white truncate ${isUnread ? 'font-bold' : ''}`}>
+                                                        <p className={`text-sm font-medium text-stone-950 truncate ${isUnread ? 'font-bold' : ''}`}>
                                                             {displayNames[room.id] || UI_STRINGS.common.loading}
                                                         </p>
                                                         <div className="flex items-center gap-1">
                                                             {room.last_message_at && (
-                                                                <span className="text-[10px] text-zinc-500 whitespace-nowrap">
+                                                                <span className={`text-[10px] whitespace-nowrap ${isUnread ? 'text-blue-600 font-semibold' : 'text-stone-400'}`}>
                                                                     {formatLastMessage(room.last_message_at)}
                                                                 </span>
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <p className={`text-xs text-zinc-500 truncate mt-0.5 ${isUnread ? 'font-bold text-zinc-300' : ''}`}>
+                                                    <p className={`text-xs truncate mt-0.5 ${isUnread ? 'font-semibold text-stone-800' : 'text-stone-500'}`}>
                                                         {room.last_message_content ? (
                                                             <>
-                                                                <span className="text-zinc-400">{room.last_message_sender}: </span>
+                                                                <span className="text-stone-500">{room.last_message_sender}: </span>
                                                                 {room.last_message_content}
                                                             </>
                                                         ) : (
@@ -397,7 +397,7 @@ export default function RoomSidebar({
                             {/* Group Chats Section */}
                             {(!isSearching || groupChats.length > 0) && (
                                 <div className="mb-2">
-                                    <div className="px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                    <div className="px-4 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wider">
                                         {UI_STRINGS.sidebar.groupChats}
                                     </div>
                                     {groupChats.map((room) => {
@@ -406,7 +406,7 @@ export default function RoomSidebar({
                                             <button
                                                 key={room.id}
                                                 onClick={() => handleRoomClick(room)}
-                                                className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors ${currentRoomId === room.id ? 'bg-white/10' : ''
+                                                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-stone-50 ${currentRoomId === room.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
                                                     }`}
                                             >
                                                 {/* Avatar */}
@@ -415,38 +415,38 @@ export default function RoomSidebar({
                                                         <img
                                                             src={room.photo_url}
                                                             alt={room.name}
-                                                            className="w-10 h-10 rounded-lg object-cover ring-2 ring-white/5"
+                                                            className="w-10 h-10 rounded-lg object-cover ring-1 ring-stone-200"
                                                         />
                                                     ) : (
-                                                        <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center text-white font-medium shrink-0 ring-2 ring-white/5">
+                                                        <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-medium shrink-0 ring-1 ring-stone-200">
                                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                                 <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3.005 3.005 0 013.75-2.906z" />
                                                             </svg>
                                                         </div>
                                                     )}
                                                     {isUnread && (
-                                                        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-blue-500 rounded-full border-2 border-zinc-950" />
+                                                        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-orange-500 rounded-full border-2 border-white" />
                                                     )}
                                                 </div>
 
                                                 {/* Room Info */}
                                                 <div className="flex-1 min-w-0 text-left">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <p className={`text-sm font-medium text-white truncate ${isUnread ? 'font-bold' : ''}`}>
+                                                        <p className={`text-sm font-medium text-stone-950 truncate ${isUnread ? 'font-bold' : ''}`}>
                                                             {displayNames[room.id] || room.name || UI_STRINGS.sidebar.unnamedGroup}
                                                         </p>
                                                         <div className="flex items-center gap-1">
                                                             {room.last_message_at && (
-                                                                <span className="text-[10px] text-zinc-500 whitespace-nowrap">
+                                                                <span className={`text-[10px] whitespace-nowrap ${isUnread ? 'text-blue-600 font-semibold' : 'text-stone-400'}`}>
                                                                     {formatLastMessage(room.last_message_at)}
                                                                 </span>
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <p className={`text-xs text-zinc-500 truncate mt-0.5 ${isUnread ? 'font-bold text-zinc-300' : ''}`}>
+                                                    <p className={`text-xs truncate mt-0.5 ${isUnread ? 'font-semibold text-stone-800' : 'text-stone-500'}`}>
                                                         {room.last_message_content ? (
                                                             <>
-                                                                <span className="text-zinc-400">{room.last_message_sender}: </span>
+                                                                <span className="text-stone-500">{room.last_message_sender}: </span>
                                                                 {room.last_message_content}
                                                             </>
                                                         ) : (
@@ -463,8 +463,8 @@ export default function RoomSidebar({
                             {/* Empty State */}
                             {!isSearching && personalChats.length === 0 && groupChats.length === 0 && (
                                 <div className="text-center py-8 px-4">
-                                    <p className="text-sm text-zinc-500">{UI_STRINGS.sidebar.noConversations}</p>
-                                    <p className="text-xs text-zinc-600 mt-1">{UI_STRINGS.sidebar.noConversationsHint}</p>
+                                    <p className="text-sm text-stone-500">{UI_STRINGS.sidebar.noConversations}</p>
+                                    <p className="text-xs text-stone-400 mt-1">{UI_STRINGS.sidebar.noConversationsHint}</p>
                                 </div>
                             )}
                         </>
@@ -472,10 +472,10 @@ export default function RoomSidebar({
                 </div>
 
                 {/* Create Group Button */}
-                <div className="p-4 border-t border-white/10">
+                <div className="p-4 border-t border-stone-200 bg-white">
                     <button
                         onClick={() => setIsCreateGroupOpen(true)}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />

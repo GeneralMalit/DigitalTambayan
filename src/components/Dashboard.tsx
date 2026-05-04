@@ -411,27 +411,27 @@ export default function Dashboard() {
     }
 
     if (loading) {
-        return <div className="text-white">Loading your tambayan...</div>
+        return <div className="flex h-full items-center justify-center text-stone-600">Loading your tambayan...</div>
     }
 
     // Show initialization error if present
     if (initError) {
         return (
-            <div className="w-full h-screen flex items-center justify-center">
+            <div className="w-full h-screen flex items-center justify-center bg-[#fbfaf7]">
                 <div className="text-center">
                     <div className="text-6xl mb-4">⚠️</div>
-                    <h2 className="text-xl font-semibold text-white mb-2">Something went wrong</h2>
-                    <p className="text-zinc-500 mb-4">{initError}</p>
+                    <h2 className="text-xl font-semibold text-stone-950 mb-2">Something went wrong</h2>
+                    <p className="text-stone-600 mb-4">{initError}</p>
                     <div className="flex items-center justify-center gap-4">
                         <button
                             onClick={() => window.location.reload()}
-                            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"
+                            className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
                         >
                             Retry
                         </button>
                         <button
                             onClick={handleSignOut}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-medium transition-colors"
+                            className="px-4 py-2 rounded-md border border-stone-300 bg-white hover:bg-stone-50 text-stone-800 font-medium transition-colors"
                         >
                             Sign Out
                         </button>
@@ -442,15 +442,15 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="w-full h-full flex flex-col">
+        <div className="w-full h-full flex flex-col bg-[#fbfaf7] text-stone-950">
             {/* Top Bar */}
-            <div className="w-full px-8 py-6 flex items-center justify-between bg-black/20 backdrop-blur-md">
+            <div className="w-full px-8 py-5 flex items-center justify-between border-b border-stone-200 bg-white/90 backdrop-blur-md">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-2xl font-semibold tracking-tight text-white font-heading">Digital <span className="text-zinc-500">Tambayan</span></h1>
+                    <h1 className="text-2xl font-semibold tracking-tight text-stone-950 font-heading">Digital <span className="text-stone-500">Tambayan</span></h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <div
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors group"
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-stone-200 bg-white cursor-pointer hover:bg-stone-50 transition-colors group"
                         onClick={handleProfilePhotoClick}
                         title="Change profile photo"
                     >
@@ -458,18 +458,18 @@ export default function Dashboard() {
                             <img
                                 src={profile.avatar_url}
                                 alt={profile.username}
-                                className="w-5 h-5 rounded-full object-cover ring-1 ring-blue-500/50"
+                                className="w-5 h-5 rounded-full object-cover ring-1 ring-blue-200"
                             />
                         ) : (
-                            <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] text-white font-bold ring-1 ring-blue-500/50">
+                            <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] text-white font-bold ring-1 ring-blue-200">
                                 {profile?.username?.charAt(0).toUpperCase()}
                             </div>
                         )}
-                        <span className="text-sm font-medium text-blue-400 group-hover:text-blue-300 transition-colors">{profile?.username}</span>
+                        <span className="text-sm font-medium text-blue-700 group-hover:text-blue-800 transition-colors">{profile?.username}</span>
                     </div>
                     <button
                         onClick={() => setIsSettingsOpen(true)}
-                        className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                        className="p-2 rounded-md hover:bg-stone-100 text-stone-500 hover:text-stone-950 transition-colors"
                         title="Settings"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -479,7 +479,7 @@ export default function Dashboard() {
                     </button>
                     <button
                         onClick={handleSignOut}
-                        className="text-sm font-medium text-zinc-500 hover:text-white transition-colors"
+                        className="text-sm font-medium text-stone-600 hover:text-stone-950 transition-colors"
                     >
                         Sign Out
                     </button>
@@ -502,11 +502,11 @@ export default function Dashboard() {
                 )}
 
                 {/* Chat Area */}
-                <div className="flex-1 flex flex-col bg-white/[0.01]">
+                <div className="flex-1 flex flex-col bg-[#fcfbf8]">
                     {currentRoom ? (
                         <>
                             {/* Chat Header */}
-                            <div className="flex items-center justify-between px-8 py-6">
+                            <div className="flex items-center justify-between border-b border-stone-200 bg-white/80 px-8 py-5">
                                 <div className="flex items-center space-x-4">
                                     {(() => {
                                         // For personal chats, try to show the partner's avatar
@@ -519,33 +519,33 @@ export default function Dashboard() {
                                             <img
                                                 src={headerAvatarUrl}
                                                 alt={roomDisplayName}
-                                                className="w-10 h-10 rounded-full object-cover ring-2 ring-white/10"
+                                                className="w-10 h-10 rounded-full object-cover ring-1 ring-stone-200"
                                             />
                                         ) : (
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ring-2 ring-white/10 ${currentRoom.is_personal ? 'bg-blue-600' : 'bg-purple-600'}`}>
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ring-1 ring-stone-200 ${currentRoom.is_personal ? 'bg-blue-600' : 'bg-[#e35d45]'}`}>
                                                 {roomDisplayName.charAt(0).toUpperCase()}
                                             </div>
                                         );
                                     })()}
                                     <h2
-                                        className="text-xl font-medium text-white tracking-tight cursor-pointer hover:text-zinc-400 transition-colors font-heading"
+                                        className="text-xl font-medium text-stone-950 tracking-tight cursor-pointer hover:text-blue-700 transition-colors font-heading"
                                         onClick={() => setIsMembersOpen(true)}
                                     >
                                         {currentRoom.is_personal ? (
                                             <>
-                                                <span className="text-zinc-500 mr-1">💬</span>
+                                                <span className="text-stone-500 mr-1">#</span>
                                                 {roomDisplayName}
                                             </>
                                         ) : (
                                             <>
-                                                <span className="text-zinc-500 mr-1">#</span>
+                                                <span className="text-stone-500 mr-1">#</span>
                                                 {roomDisplayName}
                                             </>
                                         )}
                                     </h2>
                                     <button
                                         onClick={() => setIsMembersOpen(true)}
-                                        className="text-xs text-zinc-500 hover:text-white transition-colors"
+                                        className="text-xs text-stone-500 hover:text-stone-950 transition-colors"
                                         title="View members"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -558,7 +558,7 @@ export default function Dashboard() {
                             {/* Messages */}
                             <div className="flex-1 overflow-hidden p-6 min-h-0">
                                 {chatLoading ? (
-                                    <div className="flex items-center justify-center text-zinc-500 animate-pulse h-full">
+                                    <div className="flex items-center justify-center text-stone-500 animate-pulse h-full">
                                         Warming up the tambayan...
                                     </div>
                                 ) : (
@@ -576,7 +576,7 @@ export default function Dashboard() {
                             </div>
 
                             {/* Input */}
-                            <div className="px-6 pb-6">
+                            <div className="border-t border-stone-200 bg-white px-6 pb-6 pt-4">
                                 <ChatInput
                                     onSend={(content) => handleSendMessage(profile?.id || null, profile?.username || 'Guest', content)}
                                     disabled={chatLoading}
@@ -589,9 +589,9 @@ export default function Dashboard() {
                     ) : (
                         <div className="flex-1 flex items-center justify-center">
                             <div className="text-center">
-                                <div className="text-6xl mb-4">💬</div>
-                                <h2 className="text-xl font-semibold text-white mb-2">No conversation selected</h2>
-                                <p className="text-zinc-500">Select a chat from the sidebar or create a new group</p>
+                                <div className="text-5xl mb-4 text-stone-400">#</div>
+                                <h2 className="text-xl font-semibold text-stone-950 mb-2">No conversation selected</h2>
+                                <p className="text-stone-600">Select a chat from the sidebar or create a new group</p>
                             </div>
                         </div>
                     )}
@@ -601,11 +601,11 @@ export default function Dashboard() {
             {/* Settings Modal */}
             {
                 isSettingsOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-                        <div className="w-full max-w-md space-y-6 rounded-2xl border border-white/10 bg-zinc-900 p-8 shadow-2xl relative">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/30 backdrop-blur-sm">
+                        <div className="w-full max-w-md space-y-6 rounded-lg border border-stone-200 bg-white p-8 shadow-[0_18px_50px_rgba(80,64,43,0.16)] relative">
                             <button
                                 onClick={() => setIsSettingsOpen(false)}
-                                className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+                                className="absolute top-4 right-4 text-stone-500 hover:text-stone-950"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -613,13 +613,13 @@ export default function Dashboard() {
                             </button>
 
                             {/* Tab Navigation */}
-                            <div className="flex border-b border-white/10">
+                            <div className="flex border-b border-stone-200">
                                 {profile?.is_admin && (
                                     <button
                                         onClick={() => setSettingsTab('admin')}
                                         className={`flex-1 py-3 text-sm font-medium transition-colors relative ${settingsTab === 'admin'
-                                            ? 'text-blue-400'
-                                            : 'text-zinc-500 hover:text-zinc-300'
+                                            ? 'text-blue-700'
+                                            : 'text-stone-500 hover:text-stone-800'
                                             }`}
                                     >
                                         Admin Dashboard
@@ -631,8 +631,8 @@ export default function Dashboard() {
                                 <button
                                     onClick={() => setSettingsTab('password')}
                                     className={`flex-1 py-3 text-sm font-medium transition-colors relative ${settingsTab === 'password'
-                                        ? 'text-blue-400'
-                                        : 'text-zinc-500 hover:text-zinc-300'
+                                        ? 'text-blue-700'
+                                        : 'text-stone-500 hover:text-stone-800'
                                         }`}
                                 >
                                     Change Password
@@ -656,48 +656,48 @@ export default function Dashboard() {
                             ) : (
                                 <form onSubmit={handlePasswordChange} className="space-y-4">
                                     {passError && (
-                                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm italic">
+                                        <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm">
                                             {passError}
                                         </div>
                                     )}
                                     {passSuccess && (
-                                        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 text-sm">
+                                        <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">
                                             {passSuccess}
                                         </div>
                                     )}
 
                                     <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider ml-1">Retype Old Password</label>
+                                        <label className="text-xs font-medium text-stone-700 ml-1">Retype Old Password</label>
                                         <input
                                             type="password"
                                             required
                                             value={oldPassword}
                                             onChange={(e) => setOldPassword(e.target.value)}
-                                            className="w-full rounded-lg bg-white/5 border-white/10 py-2.5 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            className="w-full rounded-md border border-stone-200 bg-white py-2.5 px-4 text-stone-950 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                                             placeholder="••••••••"
                                         />
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider ml-1">Type New Password</label>
+                                        <label className="text-xs font-medium text-stone-700 ml-1">Type New Password</label>
                                         <input
                                             type="password"
                                             required
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
-                                            className="w-full rounded-lg bg-white/5 border-white/10 py-2.5 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            className="w-full rounded-md border border-stone-200 bg-white py-2.5 px-4 text-stone-950 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                                             placeholder="••••••••"
                                         />
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider ml-1">Retype New Password</label>
+                                        <label className="text-xs font-medium text-stone-700 ml-1">Retype New Password</label>
                                         <input
                                             type="password"
                                             required
                                             value={confirmPassword}
                                             onChange={(e) => setConfirmPassword(e.target.value)}
-                                            className="w-full rounded-lg bg-white/5 border-white/10 py-2.5 px-4 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            className="w-full rounded-md border border-stone-200 bg-white py-2.5 px-4 text-stone-950 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                                             placeholder="••••••••"
                                         />
                                     </div>
@@ -705,7 +705,7 @@ export default function Dashboard() {
                                     <button
                                         type="submit"
                                         disabled={passLoading}
-                                        className="w-full mt-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all disabled:opacity-50 shadow-lg shadow-blue-600/20"
+                                        className="w-full mt-4 py-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors disabled:opacity-50"
                                     >
                                         {passLoading ? 'Updating...' : 'Update Password'}
                                     </button>
